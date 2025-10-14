@@ -20,4 +20,3 @@ Years <- 2000:2024
 
 ## Results date (for naming output files)
 resDate <- format(Sys.Date(), format="%Y%m%d")
-# resDate <- "20231002" # Set manually
