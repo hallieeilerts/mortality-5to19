@@ -1,0 +1,56 @@
+################################################################################
+#' @description Sets regional classifications for countries.
+#' @return Data frame with countries and different regional classifications.
+################################################################################
+#' Clear environment
+rm(list = ls())
+#' Libraries
+require(readstata13)
+#' Inputs
+source("./src/prepare-session/set-inputs.R")
+source("./src/prepare-session/create-session-variables.R")
+key_region_u20_WHO  <- read.dta13("./data/keys/RegionClassSDG_20190528.dta", nonint.factors = T)
+key_region_u20_IGME <- read.csv("./data/keys/RegionClassIGME_20210407.csv")
+################################################################################
+
+## SDG region classification
+
+dat1 <- key_region_u20_WHO
+dat1 <- dat1[, names(dat1) %in% c("dimensionmembercode", "whoname", "sdg1")]
+# Re-label dat1
+dat1$sdg1[dat1$sdg1 == "Australia and New Zealand (M49)"] <- "Australia and New Zealand"
+dat1$sdg1[dat1$sdg1 == "Central Asia (M49) and Southern Asia (MDG=M49)"] <- "Central and Southern Asia"
+dat1$sdg1[dat1$sdg1 == "Eastern Asia (M49) and South-eastern Asia (MDG=M49)"] <- "Eastern and South-eastern Asia"
+dat1$sdg1[dat1$sdg1 == "Latin America & the Caribbean (MDG=M49)"] <- "Latin America and the Caribbean"
+dat1$sdg1[dat1$sdg1 == "Northern America (M49) and Europe (M49)"] <- "Northern America and Europe"
+dat1$sdg1[dat1$sdg1 == "Oceania (MDG) / Oceania (M49) excluding Australia and New Zealand (M49)"] <- "Oceania"
+dat1$sdg1[dat1$sdg1 == "Sub-Saharan Africa (M49)"] <- "Sub-Saharan Africa"
+dat1$sdg1[which(!dat1$sdg1 %in% c("Australia and New Zealand", "Central and Southern Asia",
+                                        "Eastern and South-eastern Asia", "Latin America and the Caribbean",
+                                        "Northern America and Europe", "Oceania",
+                                        "Sub-Saharan Africa", ""))] <- "Western Asia and Northern Africa"
+# Re-label variables
+names(dat1)[names(dat1) == "dimensionmembercode"] <- idVars[1]
+names(dat1)[names(dat1) == "whoname"] <- "WHOname"
+names(dat1)[names(dat1) == "sdg1"] <- "SDGregion"
+head(dat1)
+
+## IGME region classification
+
+dat2 <- key_region_u20_IGME
+dat2 <- dat2[, names(dat2) %in% c("ISO3Code", "UNICEFReportRegion1", "UNICEFReportRegion2")]
+names(dat2)[names(dat2) == "ISO3Code"] <- idVars[1]
+dat2$UNICEFReportRegion1[dat2$UNICEFReportRegion1 == "Europe and Central Asia"] <- "Europe and central Asia"
+dat2$UNICEFReportRegion2[dat2$UNICEFReportRegion2 == "West and Central Africa"] <- "West and central Africa"
+dat2$UNICEFReportRegion2[dat2$UNICEFReportRegion2 == "Eastern Europe and Central Asia"] <- "Eastern Europe and central Asia"
+dat2$Region <- dat2$UNICEFReportRegion1
+# If report region 2 is not missing, use it instead
+dat2$Region[which(dat2$UNICEFReportRegion2 != "")] <- dat2$UNICEFReportRegion2[which(dat2$UNICEFReportRegion2 != "")]
+
+dat <- merge(dat1, dat2, by = idVars[1])
+
+# Save output(s) ----------------------------------------------------------
+
+write.csv(dat, "./gen/data-management/output/key_region_u20.csv", row.names = FALSE)
+
+
