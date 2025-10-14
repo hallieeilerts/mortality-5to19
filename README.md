@@ -1,4 +1,3 @@
-
 # mortality-5to19
 
 ## Developer instructions
