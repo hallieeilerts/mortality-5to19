@@ -1,4 +1,4 @@
-fn_roundCSMFsqz <- function(CSMFSQZ, CODALL){
+fn_roundCSMFsqz <- function(CSMFSQZ, KEY_CODLIST = NULL, AGGAGE = FALSE, CODALL = NULL){
   
   #' @title Round squeezed CSMFs
   # 
@@ -10,8 +10,15 @@ fn_roundCSMFsqz <- function(CSMFSQZ, CODALL){
   
   dat <- data.frame(CSMFSQZ)
   
-  # Causes of death for this age group
-  v_cod <- CODALL[CODALL %in% names(dat)]
+  # COD vector
+  if(!AGGAGE){
+    # Vector with causes of death for 5 year age groups
+    v_cod <- unique(subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD)
+  }
+  if(AGGAGE){
+    # Vector with all causes of death
+    v_cod <- CODALL[CODALL %in% names(dat)]
+  }
   
   # Round all-cause deaths
   dat$Deaths2 <- round(dat$Deaths2)

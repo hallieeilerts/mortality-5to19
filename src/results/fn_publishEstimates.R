@@ -1,4 +1,4 @@
-fn_publishEstimates <- function(DAT, KEY_REGION, KEY_CTRYCLASS, KEY_AGESEXGRP, AGESEXSUFFIX, CODALL, UNCERTAINTY = FALSE, REGIONAL = FALSE){
+fn_publishEstimates <- function(DAT, KEY_CODLIST = NULL, KEY_REGION, KEY_CTRYCLASS, KEY_AGESEXGRP = NULL, UNCERTAINTY = FALSE, REGIONAL = FALSE, AGGAGE = FALSE, CODALL = NULL, AGEGROUP = NULL, SEX = NULL){
   
   #' @title Create final spreadsheet for results sharing for national estimates
   # 
@@ -16,26 +16,39 @@ fn_publishEstimates <- function(DAT, KEY_REGION, KEY_CTRYCLASS, KEY_AGESEXGRP, A
   # KEY_REGION <- key_region_u20
   # KEY_CTRYCLASS <- key_ctryclass_u20
   # KEY_AGESEXGRP <- key_agesexgrp
-  # AGESEXSUFFIX <- ageSexSuffix
-  # CODALL <- codAll
+  # #CODALL <- codAll
+  # KEY_CODLIST <- key_codlist
+  # REGIONAL <- FALSE
+  # UNCERTAINTY <- FALSE
   
   dat <- DAT
-  v_cod <- CODALL[CODALL %in% names(dat)]
-  KEY_AGESEXGRP <- subset(KEY_AGESEXGRP, AgeSexSuffix %in% ageSexSuffix)
   
-  # Add age group
-  if(!("AgeLow" %in% names(dat))){
-    dat$AgeLow <- KEY_AGESEXGRP$AgeLow
-    dat$AgeUp <- KEY_AGESEXGRP$AgeUp
+  # COD vector
+  if(!AGGAGE){
+    # Vector with causes of death for 5 year age groups
+    v_cod <- unique(subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD)
   }
-  # Add sex
-  if(!("Sex" %in% names(dat))){
+  if(AGGAGE){
+    # Vector with all causes of death
+    v_cod <- CODALL[CODALL %in% names(dat)]
+  }
+  
+  # Add age/sex group information
+  if(!AGGAGE){
+    # Subset to age/sex group
+    KEY_AGESEXGRP <- subset(KEY_AGESEXGRP, AgeSexSuffix %in% ageSexSuffix)
+    dat$AgeGroup <- KEY_AGESEXGRP$AgeGroup
     dat$Sex <- KEY_AGESEXGRP$Sex
   }
+  if(AGGAGE){
+    dat$AgeGroup <- AGEGROUP
+    dat$Sex <- "Total"
+  }
   
-  # Rename
+  # Only keep crisis-included deaths and rates
   names(dat)[names(dat) == "Deaths2"] <- "Deaths"
   names(dat)[names(dat) == "Rate2"] <- "Rate"
+  dat <- dat[!(names(dat) %in% c("Deaths1", "Rate1"))]
   
   if(!REGIONAL){
     # Merge on regions
@@ -63,7 +76,7 @@ fn_publishEstimates <- function(DAT, KEY_REGION, KEY_CTRYCLASS, KEY_AGESEXGRP, A
   dat$Year <- dat$year
   
   # Order columns
-  v_col_order <- c("Region", "ISO3", "Year", "AgeLow", "AgeUp", "Sex", "Model", "FragileState",
+  v_col_order <- c("Region", "ISO3", "Year", "AgeGroup", "Sex", "Model", "FragileState",
                    "WHOname", "SDGregion", "UNICEFReportRegion1", "UNICEFReportRegion2",
                    "Variable", "Quantile", "Deaths", "Rate", v_cod)
   v_cols <- v_col_order[v_col_order %in% names(dat)]

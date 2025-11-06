@@ -1,4 +1,4 @@
-fn_adjustCSMFZeroDeaths <- function(CSMFSQZ, CODALL){
+fn_adjustCSMFZeroDeaths <- function(CSMFSQZ, KEY_CODLIST = NULL, AGGAGE = FALSE, CODALL = NULL){
   
   #' @title Adjust CSMF for zero IGME all-cause deaths
   # 
@@ -11,9 +11,17 @@ fn_adjustCSMFZeroDeaths <- function(CSMFSQZ, CODALL){
   #' @return Data frame with all-cause deaths/rates and squeezed CSMFs set to zero when all-cause deaths are zerok as done by fn_adjustPointIntZeroDeaths in the uncertainty pipeline.
   
   dat <- CSMFSQZ
-  # Causes of death for this age group
-  v_cod <- CODALL[CODALL %in% names(dat)]
-
+  
+  # COD vector
+  if(!AGGAGE){
+    # Vector with causes of death for 5 year age groups
+    v_cod <- unique(subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD)
+  }
+  if(AGGAGE){
+    # Vector with all causes of death
+    v_cod <- CODALL[CODALL %in% names(dat)]
+  }
+  
   # Adjustments to cause-specific fractions/rates/deaths due to zero IGME all-cause deaths
   dat[dat$Deaths2 == 0, v_cod] <- 0
   

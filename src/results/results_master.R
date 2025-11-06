@@ -14,14 +14,14 @@ source("./src/results/results_functions.R")
 # These are intermediate results while waiting on inputs for uncertainty pipeline.
 
 # Perform rounding steps that occur in uncertainty pipeline
-csmfSqz_ADJ <- fn_adjustCSMFZeroDeaths(csmfSqz, codAll)
-csmfSqz_FRMT <- fn_roundCSMFsqz(csmfSqz_ADJ, codAll)
-csmfSqz_ADJ_REG <- fn_adjustCSMFZeroDeaths(csmfSqz_REG, codAll)
-csmfSqz_FRMT_REG <- fn_roundCSMFsqz(csmfSqz_ADJ_REG, codAll)
+csmfSqz_ADJ <- fn_adjustCSMFZeroDeaths(csmfSqz, key_codlist)
+csmfSqz_FRMT <- fn_roundCSMFsqz(csmfSqz_ADJ, key_codlist)
+csmfSqz_ADJ_REG <- fn_adjustCSMFZeroDeaths(csmfSqz_REG, key_codlist)
+csmfSqz_FRMT_REG <- fn_roundCSMFsqz(csmfSqz_ADJ_REG, key_codlist)
 
 # Format estimates
-csmfSqz_PUB      <- fn_publishEstimates(csmfSqz_FRMT, key_region_u20, key_ctryclass_u20, key_agesexgrp, ageSexSuffix, codAll, UNCERTAINTY = FALSE)
-csmfSqz_PUB_REG  <- fn_publishEstimates(csmfSqz_FRMT_REG, key_region_u20, key_ctryclass_u20, key_agesexgrp, ageSexSuffix, codAll, UNCERTAINTY = FALSE, REGIONAL = TRUE)
+csmfSqz_PUB <- fn_publishEstimates(DAT = csmfSqz_FRMT, KEY_CODLIST = key_codlist, KEY_REGION = key_region_u20, KEY_CTRYCLASS = key_ctryclass_u20,  KEY_AGESEXGRP = key_agesexgrp)
+csmfSqz_PUB_REG  <- fn_publishEstimates(DAT = csmfSqz_FRMT_REG, KEY_CODLIST = key_codlist, KEY_REGION = key_region_u20, KEY_CTRYCLASS = key_ctryclass_u20, KEY_AGESEXGRP = key_agesexgrp, REGIONAL = TRUE)
 
 # Save
 write.csv(csmfSqz_PUB, paste("./gen/results/output/PointEstimates_National_", ageSexSuffix,"_", resDate, ".csv", sep=""), row.names = FALSE)
