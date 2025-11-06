@@ -1,12 +1,11 @@
 ################################################################################
-#' @description Formats VR data for CSMF calculation.
-#' @return Data frame with VR data with updated variable names.
+#' @description Formats cause-specific mortality fractions for good VR countries
+#' @return Data frame with VR CSMFs with updated variable names.
 ################################################################################
 #' Libraries
 library(readstata13)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
-source("./src/prepare-session/create-session-variables.R")
 dat_filename <- list.files("./data/vr")
 dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename, ignore.case = TRUE)]
 dat_filename <- tail(sort(dat_filename),1)

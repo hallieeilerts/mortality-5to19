@@ -1,186 +1,113 @@
 ################################################################################
-#' @description Format regional draws
-#' @return ....
+#' @description Create regional crisis-included envelopes for 5-9, 10-14, 15-19m, 15-19f, 15-19 combined
+#' @return Data frame with c(iso3, year, Deaths2, Rate2)
 ################################################################################
 #' Clear environment
 rm(list = ls())
 #' Libraries
-library(data.table)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
-source("./src/prepare-session/create-session-variables.R")
-# List of regions from IGME
-info <- read.csv("./data/igme/regional/15-19/male/Rates & Deaths(ADJUSTED)_UNICEFReportRegion-males.csv") 
-# Location of files
-path <- "./data/igme/regional/" 
-# Draw file names
-if(ageSexSuffix == "05to09y"){regDeaths  <- "5-9/UNICEFReportRegion_death0.all.rtj.rda"
-                               regRates   <- "5-9/UNICEFReportRegion_imr.rtj.rda"
-                               worldDeaths <- "5-9/death0.all.wtj.rda"
-                               worldRates <-  "5-9/imr.wtj.rda"}
-if(ageSexSuffix == "10to14y"){regDeaths   <- "10-14/UNICEFReportRegion_death1to4.all.rtj.rda"
-                               regRates    <- "10-14/UNICEFReportRegion_cmr.rtj.rda"
-                               worldDeaths <- "10-14/death1to4.all.wtj.rda"
-                               worldRates  <- "10-14/cmr.wtj.rda" }
-if(ageSexSuffix %in% c("15to19yF","15to19yM")){regf <- "15-19/female/Rates & Deaths(ADJUSTED)_UNICEFReportRegion-females.csv"
-                                               regm  <- "15-19/male/Rates & Deaths(ADJUSTED)_UNICEFReportRegion-males.csv"}
+## envelope
+env <- read.csv("./gen/data-management/output/env_u20.csv")
+## Classification keys
+key_agesexgrp <- read.csv("./gen/data-management/output/key_agesexgrp_u20.csv")
+key_region <- read.csv("./gen/data-management/output/key_region_u20.csv")
+################################################################################
 
-# Classification keys
-key_region_u20    <- read.csv("./gen/data-management/output/key_region_u20.csv")
-###############################################################################
+# Merge regions onto national envelopes
+dat <- merge(env, key_region, by = "iso3")
 
-## Load region names from info file provided by IGME
-v_regions <- unique(info$Region)
-v_regions <- v_regions[!(v_regions %in% "World")]
+dat <- subset(dat, AgeSexSuffix %in% c("05to09y", "10to14y", "15to19yF", "15to19yM", "15to19y"))
 
-# Load data ---------------------------------------------------------------
+# Back calculate denominator from deaths and mortality rate
+dat$Px <- dat$Deaths2/dat$Rate2
 
-if(ageLow %in% 5){
-  # Deaths
-  load(paste0(path, regDeaths))
-  regDea <- death0.all.rtj  
-  rm(death0.all.rtj  )
-  # Rates
-  load(paste0(path, regRates))
-  regQx <- imr.rtj
-  rm(imr.rtj)
-  # World deaths
-  load(paste0(path, worldDeaths))
-  worldDea <- death0.all.wtj[, , 1]
-  rm(death0.all.wtj)
-  # World rates
-  load(paste0(path, worldRates))
-  worldQx <- imr.wtj[, , 1]
-  rm(imr.wtj)
+if(ageSexSuffix %in% c("05to09y", "10to14y")){
+  # Aggregate deaths and denominators for countries for each region
+  dat_list <- lapply(split(dat, dat$Region), function(x) {
+    tmp <- aggregate(x[, c("Deaths1", "Deaths2", "Px")], 
+                     by = list(year = x$year), 
+                     sum, na.rm = TRUE)
+    tmp$Region <- unique(x$Region)
+    tmp$AgeSexSuffix <- ageSexSuffix
+    return(tmp)
+  })
+  dat <- do.call(rbind, dat_list)
+  
+  # Aggregate for world
+  dat_world <- aggregate(dat[, c("Deaths1", "Deaths2", "Px")], 
+                         by = list(year = dat$year), 
+                         sum, na.rm = TRUE)
+  dat_world$Region <- "World"
+  dat_world$AgeSexSuffix <- ageSexSuffix
+  
+  # Combine
+  dat <- rbind(dat_world, dat)
+}
+if(ageSexSuffix %in% c("15to19yF", "15to19yM", "15to19y")){
+  
+  v_15to19 <- c("15to19yF", "15to19yM", "15to19y")
+  dat15to19 <- data.frame()
+  
+  for(i in 1:length(v_15to19)){
+    
+    my15to19 <- v_15to19[i]
+    dat15to19i <- subset(dat, AgeSexSuffix %in% my15to19)
+    
+    # Aggregate deaths and denominators for countries for each region
+    dat_list <- lapply(split(dat15to19i, dat15to19i$Region), function(x) {
+      tmp <- aggregate(x[, c("Deaths1", "Deaths2", "Px")], 
+                       by = list(year = x$year), 
+                       sum, na.rm = TRUE)
+      tmp$Region <- unique(x$Region)
+      tmp$AgeSexSuffix <- my15to19
+      tmp
+    })
+    dati <- do.call(rbind, dat_list)
+    
+    # Aggregate for world
+    dat_worldi <- aggregate(dati[, c("Deaths1", "Deaths2", "Px")], 
+                           by = list(year = dati$year), 
+                           sum, na.rm = TRUE)
+    dat_worldi$Region <- "World"
+    dat_worldi$AgeSexSuffix <- my15to19
+    
+    dat15to19 <- rbind(dat15to19, dat_worldi, dati)
+  }
+  
+  dat <- dat15to19
 }
 
-if(ageLow %in% 10){
-  # Deaths
-  load(paste0(path, regDeaths))
-  regDea <- death1to4.all.rtj  
-  rm(death1to4.all.rtj)
-  # Rates
-  load(paste0(path, regRates))
-  regQx <- cmr.rtj
-  rm(cmr.rtj)
-  # World deaths
-  load(paste0(path, worldDeaths))
-  worldDea <- death1to4.all.wtj[, , 1]
-  rm(death1to4.all.wtj)
-  # World rates
-  load(paste0(path, worldRates))
-  worldQx <- cmr.wtj[, , 1]
-  rm(cmr.wtj)
+# Re-calculate mortality rate
+dat$Rate1 <- dat$Deaths1 / dat$Px
+dat$Rate2 <- dat$Deaths2 / dat$Px
+dat$Px <- NULL
+
+# Tidy
+dat <- dat[,c("AgeSexSuffix", "Region", "year", "Deaths1", "Deaths2", "Rate1", "Rate2")]
+row.names(dat) <- NULL
+
+# Remove AgeSexSuffix column
+if(ageSexSuffix %in% c("05to09y","10to14y")){
+  dat$AgeSexSuffix <- NULL
 }
-if(ageLow %in% 15){
-  env_15to19mREG <- read.csv(paste0(path, regm))
-  env_15to19fREG <- read.csv(paste0(path, regf))
+if(ageSexSuffix %in% c("15to19yF", "15to19yM")){
+  dat_15to19f <- subset(dat, AgeSexSuffix == "15to19yF")
+  dat_15to19m <- subset(dat, AgeSexSuffix == "15to19yM")
+  dat_15to19 <- subset(dat, AgeSexSuffix == "15to19y")
+  dat_15to19f$AgeSexSuffix <- NULL
+  dat_15to19m$AgeSexSuffix <- NULL
+  dat_15to19$AgeSexSuffix <- NULL
 }
-
-
-# Reshape data ------------------------------------------------------------
-
-if(ageLow %in% c(5, 10)){
-  
-  # Select years
-  regDea <- as.matrix(regDea[, ncol(regDea) - (length(Years) - 1):0, 1])
-  regQx <- as.matrix(regQx[, ncol(regQx) - (length(Years) - 1):0, 1])
-  worldDea <- worldDea[length(worldDea) - (length(Years) - 1):0]
-  worldQx <- worldQx[length(worldQx) - (length(Years) - 1):0]
-  
-  # Add column for regions
-  regDea <- as.data.frame(cbind(v_regions, regDea))
-  regQx <- as.data.frame(cbind(v_regions, regQx))
-  
-  # Add column names
-  colnames(regDea) <- c('Region', Years)
-  colnames(regQx) <- c('Region', Years)
-  
-  # Reshape to long
-  regDea <- melt(setDT(regDea), id.vars = "Region", variable.name = "Year", value.name = "Deaths2")
-  regQx <- melt(setDT(regQx), id.vars = "Region", variable.name = "Year", value.name = "Rate2")
-  
-  # Merge
-  env_REG <- merge(regDea, regQx, by = c("Region", "Year"))
-  
-  # Rbind world deaths and rates
-  env_REG <- rbind(env_REG, 
-                   data.frame(Region = rep('World', length(Years)),
-                              Year = Years,
-                              Deaths2 = worldDea, Rate2 = worldQx))
-}
-if(ageLow == 15){
-  
-  # Select years and variables
-  env_15to19mREG <- env_15to19mREG[env_15to19mREG$Year %in% Years, ]
-  env_15to19mREG <- env_15to19mREG[, c("Region", "Year", "Deaths.age.15to19.median", "X5q15")]
-  names(env_15to19mREG) <- c('Region', 'Year', 'Deaths2', 'Rate2')
-  
-  # Select years and variables
-  env_15to19fREG <- env_15to19fREG[env_15to19fREG$Year %in% Years, ]
-  env_15to19fREG <- env_15to19fREG[, c("Region", "Year", "Deaths.age.15to19.median", "X5q15")]
-  names(env_15to19fREG) <- c('Region', 'Year', 'Deaths2', 'Rate2')
-  
-  # Combine sexes
-  # Back calculate px
-  env_15to19fREG$Px <- env_15to19fREG$Deaths2/env_15to19fREG$Rate2
-  env_15to19mREG$Px <- env_15to19mREG$Deaths2/env_15to19mREG$Rate2
-  env_REG <- merge(env_15to19fREG, env_15to19mREG, by = c("Region", "Year"), suffixes = c(".f", ".m"))
-  # Sum deaths, recalculate rate
-  env_REG$Deaths2 <- env_REG$Deaths2.f + env_REG$Deaths2.m
-  env_REG$Rate2 <- env_REG$Deaths2/(env_REG$Px.f + env_REG$Px.m)
-  
-  # Only keep columns of interest
-  env_15to19fREG <- env_15to19fREG[, c('Region', 'Year', 'Deaths2', 'Rate2')]
-  env_15to19mREG <- env_15to19mREG[, c('Region', 'Year', 'Deaths2', 'Rate2')]
-  env_REG <- env_REG[, c('Region', 'Year', 'Deaths2', 'Rate2')]
-}  
-
-key_region <- key_region_u20
-key_region$region_lower <- tolower(key_region$Region)
-key_region <- key_region[, c("Region", "region_lower")]
-key_region <- key_region[!duplicated(key_region),]
-
-# Recode region names to match with official IGME Region names in key_region
-env_REG$region_lower <- tolower(env_REG$Region)
-env_REG <- merge(env_REG, key_region, by = "region_lower", all.x = TRUE)
-env_REG$recode_region <- ifelse(env_REG$Region.x != "World" & env_REG$Region.x != env_REG$Region.y, 1, 0)
-# If the region name in the regional envelopes does not match the case of official region names, recode
-env_REG$Region.x[!is.na(env_REG$recode_region) & env_REG$recode_region == 1] <- env_REG$Region.y[!is.na(env_REG$recode_region) & env_REG$recode_region == 1]
-
-# Tidy up
-names(env_REG)[names(env_REG) == "Region.x"] <- "Region"
-env_REG <- env_REG[,c("Region", "Year", "Deaths2", "Rate2")]
-
-if(ageLow == 15){
-  # Recode region names to match with official IGME Region names in key_region
-  env_15to19fREG$region_lower <- tolower(env_15to19fREG$Region)
-  env_15to19fREG <- merge(env_15to19fREG, key_region, by = "region_lower", all.x = TRUE)
-  env_15to19fREG$recode_region <- ifelse(env_15to19fREG$Region.x != "World" & env_15to19fREG$Region.x != env_15to19fREG$Region.y, 1, 0)
-  # If the region name in the regional envelopes does not match the case of official region names, recode
-  env_15to19fREG$Region.x[!is.na(env_15to19fREG$recode_region) & env_15to19fREG$recode_region == 1] <- env_15to19fREG$Region.y[!is.na(env_15to19fREG$recode_region) & env_15to19fREG$recode_region == 1]
-  # Tidy up
-  names(env_15to19fREG)[names(env_15to19fREG) == "Region.x"] <- "Region"
-  env_15to19fREG <- env_15to19fREG[,c("Region", "Year", "Deaths2", "Rate2")]
-  
-  # Recode region names to match with official IGME Region names in key_region
-  env_15to19mREG$region_lower <- tolower(env_15to19mREG$Region)
-  env_15to19mREG <- merge(env_15to19mREG, key_region, by = "region_lower", all.x = TRUE)
-  env_15to19mREG$recode_region <- ifelse(env_15to19mREG$Region.x != "World" & env_15to19mREG$Region.x != env_15to19mREG$Region.y, 1, 0)
-  # If the region name in the regional envelopes does not match the case of official region names, recode
-  env_15to19mREG$Region.x[!is.na(env_15to19mREG$recode_region) & env_15to19mREG$recode_region == 1] <- env_15to19mREG$Region.y[!is.na(env_15to19mREG$recode_region) & env_15to19mREG$recode_region == 1]
-  # Tidy up
-  names(env_15to19mREG)[names(env_15to19mREG) == "Region.x"] <- "Region"
-  env_15to19mREG <- env_15to19mREG[,c("Region", "Year", "Deaths2", "Rate2")]
-}
-
 
 # Save output(s) ----------------------------------------------------------
 
-if(ageLow != 15){
-  write.csv(env_REG, paste("./gen/data-management/output/env_",ageSexSuffix,"_REG.csv", sep = ""), row.names = FALSE)
-}else{
-  write.csv(env_REG, paste("./gen/data-management/output/env_15to19y_REG.csv", sep = ""), row.names = FALSE)
-  write.csv(env_15to19mREG, paste("./gen/data-management/output/env_15to19yM_REG.csv", sep = ""), row.names = FALSE)
-  write.csv(env_15to19fREG, paste("./gen/data-management/output/env_15to19yF_REG.csv", sep = ""), row.names = FALSE)
+if(ageSexSuffix %in% c("05to09y","10to14y")){
+  write.csv(dat, paste("./gen/data-management/output/env_",ageSexSuffix,"_REG.csv", sep = ""), row.names = FALSE)
 }
+if(ageSexSuffix %in% c("15to19yF", "15to19yM")){
+  write.csv(dat_15to19f, paste("./gen/data-management/output/env_15to19yF_REG.csv", sep = ""), row.names = FALSE)
+  write.csv(dat_15to19m, paste("./gen/data-management/output/env_15to19yM_REG.csv", sep = ""), row.names = FALSE)
+  write.csv(dat_15to19, paste("./gen/data-management/output/env_15to19y_REG.csv", sep = ""), row.names = FALSE)
+}
+

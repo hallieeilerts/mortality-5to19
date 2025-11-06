@@ -1,33 +1,24 @@
 ################################################################################
-#' @description Rename columns
-#' @return Data frame with c("ISO3", "Year", "dth_malaria_5to19")
+#' @description Extract malaria fractions for 1-59m
+#' @return Data frame with c("ISO3", "Year", "csmf_malaria_5to19")
 ################################################################################
 #' Clear environment
 rm(list = ls())
 #' Libraries
-require(readstata13)
 require(tidyr)
 require(dplyr)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
-source("./src/prepare-session/create-session-variables.R")
-csmf_01to04 <- read.dta13("./data/mortality-fractions/child_cod_2000-2021.dta")
+csmf_01to04 <- read.csv("./data/previous-results/CA-CODE-2024-1to59m-National.csv")
 key_ctryclass_u20 <- read.csv("./gen/data-management/output/key_ctryclass_u20.csv")
 ################################################################################
 
-# Set age/sex groups contained in csmf data
-v_AgeSexLabel <- c("Months1to59")
+dat <- subset(csmf_01to04, Indicator == "Fraction" & Cause.of.death == "Malaria")
 
-# Clean data --------------------------------------------------------------
-
-dat <- csmf_01to04
-
-# Select countries (exclude regions)
-dat <- subset(dat, !is.na(iso3))
-dat <- subset(dat, iso3 != "NA")
-# Refer to "child_cod_2000-2021.xls" readme tab to identify column name for postneonatal malaria CSMF
-dat$csmf_malaria_01to04 <- dat$post8/dat$pnd
-dat$csmf_malaria_01to04[is.na(dat$csmf_malaria_01to04)] <- 0
+# Rename variables
+names(dat)[names(dat) == "REF_AREA"] <- "iso3"
+names(dat)[names(dat) == "TIME_PERIOD"] <- "year"
+names(dat)[names(dat) == "OBS_VALUE"] <- "csmf_malaria_01to04"
 dat <- dat[,c("iso3", "year", "csmf_malaria_01to04")]
 
 # Check that all expected countries are included --------------------------
@@ -46,10 +37,7 @@ df_ctryyears <- data.frame(iso3 = rep(key_ctryclass_u20$iso3, each = length(Year
                            year = rep(Years))
 
 # Merge onto COD data, identifying missing countries/years
-dat <- merge(dat, df_ctryyears, by = idVars[1:2], all = TRUE)
-
-# Add agesexgrp
-dat$AgeSexLabel <- v_AgeSexLabel[1]
+dat <- merge(dat, df_ctryyears, by = c("iso3", "year"), all = TRUE)
 
 # Fill missing values -----------------------------------------------------
 
@@ -58,9 +46,9 @@ dat$csmf_malaria_01to04[which(is.na(dat$csmf_malaria_01to04) & dat$year <= 2021)
 
 # Extrapolate from 2021 to 2023
 extend <- dat %>% 
-  arrange(AgeSexLabel, iso3, year) %>%
+  arrange(iso3, year) %>%
   filter(year >= 2021) %>% 
-  group_by(AgeSexLabel, iso3) %>%
+  group_by(iso3) %>%
   fill(csmf_malaria_01to04, .direction = "down") %>% 
   filter(year > 2021)
 
@@ -73,13 +61,6 @@ dat <- dat[, c("iso3", "year", "csmf_malaria_01to04")]
 dat <- dat[order(dat$iso3, dat$year),]
 rownames(dat) <- NULL
 
-###################################################################
-######################### BEGIN-OUTPUTS ###########################
-###################################################################
+# Save output(s) ----------------------------------------------------------
 
-# Save output(s)
 write.csv(dat, paste("./gen/prediction/input/frac_malaria_01to04.csv", sep=""), row.names = FALSE)
-
-###################################################################
-######################### END-OUTPUTS #############################
-###################################################################

@@ -8,7 +8,6 @@ rm(list = ls())
 library(readxl)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
-source("./src/prepare-session/create-session-variables.R")
 dat_filename <- list.files("./data/keys")
 dat_filename <- dat_filename[grepl("codlist", dat_filename, ignore.case = TRUE)]
 dat_filename <- tail(sort(dat_filename),1) # Most recent

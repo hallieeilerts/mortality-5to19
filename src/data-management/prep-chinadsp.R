@@ -10,20 +10,20 @@ library(tidyr)
 library(dplyr)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
-source("./src/prepare-session/create-session-variables.R")
 dat <- read.dta13("./data/china/20210330-ChinaDSP.dta", nonint.factors = T)
 key_cod <- read.csv(paste("./gen/data-management/output/key_cod_", ageSexSuffix, ".csv", sep=""))
 key_codlist <- read.csv(paste("./gen/data-management/output/key_codlist_", ageSexSuffix, ".csv", sep=""))
+key_agesexgrp <- read.csv("./gen/data-management/output/key_agesexgrp_u20.csv")
 ################################################################################
 
 # Add country variable
 dat$iso3 <- "CHN"
 
 # Create new age and sex variables
-dat$AgeSexSuffix <- "05to09y"
-dat$AgeSexSuffix[dat$group == "Both 10-14"] <- "10to14y"
-dat$AgeSexSuffix[dat$group == "Female 15-19_(4)"] <- "15to19yF"
-dat$AgeSexSuffix[dat$group == "Male 15-19"] <- "15to19yM"
+dat$AgeSexSuffix <- subset(key_agesexgrp, AgeSexLabel == "Years5to9")$AgeSexSuffix
+dat$AgeSexSuffix[dat$group == "Both 10-14"] <- subset(key_agesexgrp, AgeSexLabel == "Years10to14")$AgeSexSuffix
+dat$AgeSexSuffix[dat$group == "Female 15-19_(4)"] <- subset(key_agesexgrp, AgeSexLabel == "Years15to19f")$AgeSexSuffix
+dat$AgeSexSuffix[dat$group == "Male 15-19"] <- subset(key_agesexgrp, AgeSexLabel == "Years15to19m")$AgeSexSuffix
 
 # Keep age group of interest
 dat <- subset(dat, AgeSexSuffix == ageSexSuffix)
@@ -57,20 +57,25 @@ for(i in 1:length(v_add)){
   names(dat)[names(dat) %in% "new"] <- v_add[i]
 }
 
-### !!!! NOTE - this will be different for different age groups
-# need to improve how this is done
-
 # Alter reclassification key
-# Still want to reclassify, but the squeezing is different for China, so need to alter how this is done
-# Only HIV gets squeezed in for China, so retain any other reported causes that are missing
-# Identify which reported COD are not in the reclass key (i.e., the are reclassified to another cause)
+# Still necessary to reclassify CODs for China, but the CODs that get reclassified are slightly different due to different squeezing methods.
+# (Only HIV gets squeezed in, all other causes that are typically squeezed in should be left in the data)
+
+# Identify which reported COD are not in the reclass column
+# (i.e., they are reclassified as an "other" cause in this column)
 v_cod_reported <- subset(key_codlist, ModeledOrReported == "Reported")$COD
 v_dont_reclass <- v_cod_reported[!(v_cod_reported %in% key_cod$cod_reclass)]
 v_dont_reclass # "CollectVio" "NatDis"   "Measles"  "TB"  "HIV"
-# drop HIV, because actually do want to reclassify this. this gets squeezed in for China.
+
+# Remove HIV from this vector
+# We don't want to reclassify CollectVio, NatDis, Measles, TB
+# We do want to reclassify HIV, because it will be squeezed in for China.
 v_dont_reclass <- v_dont_reclass[!(v_dont_reclass %in% "HIV")]
 v_dont_reclass <- v_dont_reclass[order(v_dont_reclass)]
-# Alter reclass key with causes that should be retained (formerly were reclassified to a different cause)
+
+# Create a new COD key that is China-specific
+
+# Alter reclass column for CODs that should be retained (formerly were reclassified to an "other" cause or dropped)
 key_cod_chn <- key_cod
 if("CollectVio" %in% v_dont_reclass){
   key_cod_chn$cod_reclass[key_cod_chn$cod_mapped == "colvio"] <- "CollectVio"
@@ -84,13 +89,10 @@ if("TB" %in% v_dont_reclass){
 if("NatDis" %in% v_dont_reclass){
   key_cod_chn$cod_reclass[key_cod_chn$cod_mapped == "natdis"] <- "NatDis"
 }
-# key_cod_chn$cod_reclass[key_cod_chn$cod_mapped == "colvio"] <- v_dont_reclass[1]
-# key_cod_chn$cod_reclass[key_cod_chn$cod_mapped == "mea"] <- v_dont_reclass[2]
-# key_cod_chn$cod_reclass[key_cod_chn$cod_mapped == "natdis"] <- v_dont_reclass[3]
 # Drop causes that are dropped from data
 key_cod_chn <- subset(key_cod_chn, !is.na(cod_reclass))
 
-# Vector with China-specific reclass categories (including single-cause estimates)
+# Vector with China-specific reclass categories
 v_reclass <- unique(key_cod_chn$cod_reclass)
 # Drop causes that should be reclassified to nothing (dropped)
 v_reclass <- v_reclass[!(v_reclass %in% c("Other", "Undetermined"))]
@@ -110,67 +112,13 @@ for(i in 1:length(v_reclass)){
 }
 
 # Select idvars and COD columns
-dat <- dat[, names(dat) %in% c(idVars, v_reclass)]
+dat <- dat[, names(dat) %in% c("iso3", "year", v_reclass)]
 
 # Extrapolate fractions
 dat <- dat %>% arrange(year, iso3) %>%
   complete(year = Years,
            iso3 = "CHN") %>%
   fill(all_of(v_reclass), .direction = "down")
-
-# v_orig <- c("dia","mea","mening","lri","tb","maternal","othercmpn","congen","neoplasm","cardio","endo","digest","otherncd","rta","drown","natdis","intvio","colvio","selfharm","injuries")
-# v_orig[!(v_orig %in% key_cod$cod_mapped)]
-# 
-# # # Add missing categories to match VA COD list
-# # if (!"typhoid" %in% names(dat)) dat$typhoid <- 0
-# # if (!"other" %in% names(dat)) dat$other <- 0
-# # if (!"undt" %in% names(dat)) dat$undt <- 0
-# # if (!"hiv" %in% names(dat)) dat$hiv <- 0
-# # if (!"mal" %in% names(dat)) dat$mal <- 0
-# 
-# #### NOTE
-# # NEED TO MAKE SURE MALARIA AND MEASLES ARE INCLUDED!!! IMPORTANT FOR SQUEEZING sqzcrisisepi later
-# 
-# 
-# 
-# # Create new key that only includes causes in china
-# key_cod_chn <- subset(key_cod, cod_mapped %in% v_orig)
-# # Alter reclassification key to match reported causes
-# # Still want to reclassify, but also want to retain causes which ultimately get reported
-# key_cod_chn$cod_reclass[key_cod_chn$cod_mapped == "colvio"] <- "CollectVio"
-# key_cod_chn$cod_reclass[key_cod_chn$cod_mapped == "natdis"] <- "NatDis"
-# 
-# # Vector with all CODs (including single-cause estimates)
-# v_cod <- unique(key_cod_chn$cod_reclass)
-# v_cod <- v_cod[!is.na(v_cod)]
-# v_cod <- v_cod[!v_cod %in% c("Other", "Undetermined")]
-# # For China, also exclude HIV as this will be added through squeezing
-# v_cod <- v_cod[v_cod != "HIV"]
-# 
-# # NOTE: CHECK ORDERING HERE. IS THIS HOW I WANT TO TREAT NATDIS AND COLVIO?
-# 
-# # Re-classify causes of death
-# for(i in 1:length(v_cod)){
-#   
-#   orig <- key_cod_chn$cod_mapped[key_cod_chn$cod_reclass == v_cod[i]]
-#   if (length(orig) > 1) {
-#     dat[, paste(v_cod[i])] <- apply(dat[, paste(orig)], 1, 
-#                                     function(x) {
-#                                       if (all(is.na(x))) {
-#                                         return(NA)
-#                                       } else return(sum(x, na.rm = T))
-#                                     })
-#   } else dat[, paste(v_cod[i])] <- dat[, paste(orig)]
-# }
-# 
-# # Select idvars and COD columns
-# dat <- dat[, names(dat) %in% c(idVars, v_cod)]
-# 
-# # Extrapolate fractions
-# dat <- dat %>% arrange(year, iso3) %>%
-#   complete(year = 2000:2024,
-#            iso3 = "CHN") %>%
-#   fill(any_of(v_cod), .direction = "down")
 
 # Save output(s) ----------------------------------------------------------
 

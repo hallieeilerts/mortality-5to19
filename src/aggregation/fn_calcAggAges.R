@@ -11,10 +11,21 @@ fn_calcAggAges <- function(AGELB, AGEUB, CODALL, CSMF_5TO9 = NULL, CSMF_10TO14 =
   #' @param ENV Data frame IGME envelopes with crisis-included deaths and rates for all ages.
   #' @return Data frame with CSMFs and all-cause crisis-free and crisis-included deaths and rates for aggregate age groups
   
-  # # 
-  # AGELB=15
-  # AGEUB=19
-  # CODALL=codAll
+  ## Testing
+  # AGELB = 5
+  # AGEUB = 19
+  # CODALL = codAll
+  # CSMF_5TO9 = csmfSqz_05to09
+  # CSMF_10TO14 = csmfSqz_10to14
+  # CSMF_15TO19F = csmfSqz_15to19f
+  # CSMF_15TO19M = csmfSqz_15to19m
+  # ENV = env_u20
+  # REGIONAL = FALSE
+  # UNCERTAINTY = FALSE
+  ## Testing uncertainty
+  # AGELB = 5
+  # AGEUB = 19
+  # CODALL = codAll
   # CSMF_5TO9 = csmfSqzDraws_05to09
   # CSMF_10TO14 = csmfSqzDraws_10to14
   # CSMF_15TO19F = csmfSqzDraws_15to19f
@@ -24,23 +35,25 @@ fn_calcAggAges <- function(AGELB, AGEUB, CODALL, CSMF_5TO9 = NULL, CSMF_10TO14 =
   # REGIONAL = FALSE
   
   env <- ENV
-  v_cod <- CODALL
   dat5to9 <- CSMF_5TO9
   dat10to14 <- CSMF_10TO14
   dat15to19f <- CSMF_15TO19F
   dat15to19m <- CSMF_15TO19M
   
+  # Vector with COD in correct order
+  v_cod <- CODALL 
+  
   # Aux idVars
   if(!REGIONAL){
-    idVarsAux <- idVars
+    idVarsAux <- c("iso3", "year")
   }else{
-    idVarsAux <- c("Region", idVars[2:3])
+    idVarsAux <- c("Region", "year")
   }
   
   if(!UNCERTAINTY){
-    v_cols1 <- c("ISO3","Year","Deaths1","Rate1","Deaths2","Rate2")
+    v_cols1 <- c("iso3","year","Deaths1","Rate1","Deaths2","Rate2")
   }else{
-    v_cols1 <- c("ISO3","Year","Deaths1","Deaths2","Rate2")
+    v_cols1 <- c("iso3","year","Deaths1","Deaths2","Rate2")
   }
   
   
@@ -55,14 +68,14 @@ fn_calcAggAges <- function(AGELB, AGEUB, CODALL, CSMF_5TO9 = NULL, CSMF_10TO14 =
   if(AGEUB == 19){
     dat15to19f[, v_cod[v_cod %in% names(dat15to19f)]] <- dat15to19f[, v_cod[v_cod %in% names(dat15to19f)]] * dat15to19f$Deaths2
     dat15to19m[, v_cod[v_cod %in% names(dat15to19m)]] <- dat15to19m[, v_cod[v_cod %in% names(dat15to19m)]] * dat15to19m$Deaths2
+    dat15to19m$Maternal <- 0
     # Combine sexes
     dat15to19 <- dat15to19f
     dat15to19[, v_cod[v_cod %in% names(dat15to19)]] <- dat15to19[, v_cod[v_cod %in% names(dat15to19)]] + dat15to19m[, v_cod[v_cod %in% names(dat15to19m)]]
-    dat15to19$Sex <- sexLabels[1]
     # Get sex-combined deaths and rates from IGME envelope
     # For envelope draws, no need to subset, it will only be the 15-19 deaths and rates
     if(!UNCERTAINTY){
-      env <- subset(env, Sex == sexLabels[1] & AgeLow == 15 & AgeUp == 19)[,v_cols1]
+      env <- subset(env, AgeSexSuffix == "15to19y")[,v_cols1]
     }
   }
   
@@ -80,7 +93,7 @@ fn_calcAggAges <- function(AGELB, AGEUB, CODALL, CSMF_5TO9 = NULL, CSMF_10TO14 =
     l_df <- list(env)
   }
   if(length(l_df)>1){ 
-    df_envAgg <- Reduce(function(x, y) merge(x, y, by = c("ISO3", "Year"), all=TRUE), l_df)
+    df_envAgg <- Reduce(function(x, y) merge(x, y, by = c("iso3", "year"), all=TRUE), l_df)
   }else{
     df_envAgg <- l_df[[1]]
   }
@@ -171,20 +184,20 @@ fn_calcAggAges <- function(AGELB, AGEUB, CODALL, CSMF_5TO9 = NULL, CSMF_10TO14 =
   
   # Sum deaths over aggregate age groups
   if(!REGIONAL){
-    dat <- aggregate(dat[, v_cod[v_cod %in% names(dat)]], by = list(dat$ISO3, dat$Year, dat$Sex), sum)
+    dat <- aggregate(dat[, v_cod[v_cod %in% names(dat)]], by = list(dat$iso3, dat$year), sum)
   }else{
-    dat <- aggregate(dat[, v_cod[v_cod %in% names(dat)]], by = list(dat$Region, dat$Year, dat$Sex), sum)
+    dat <- aggregate(dat[, v_cod[v_cod %in% names(dat)]], by = list(dat$Region, dat$year), sum)
   }
-  names(dat)[1:3] <- idVarsAux
+  names(dat)[1:2] <- idVarsAux
   
   # Merge columns with all-cause deaths and rates for aggregate age groups
-  dat <- merge(dat, df_envAgg, by = c("ISO3", "Year"), all.x = T, all.y = F)
+  dat <- merge(dat, df_envAgg, by = c("iso3", "year"), all.x = T, all.y = F)
   
   # Back transform into fractions
   dat[, v_cod[v_cod %in% names(dat)]] <- round(dat[, v_cod[v_cod %in% names(dat)]] / rowSums(dat[, v_cod[v_cod %in% names(dat)]]), 5)
   
   # Tidy up
-  dat <- dat[order(dat$ISO3, dat$Year), ]
+  dat <- dat[order(dat$iso3, dat$year), ]
   rownames(dat) <- NULL
   
   return(dat)

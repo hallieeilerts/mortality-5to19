@@ -16,6 +16,6 @@ source("./src/prediction/prediction_master.R")
 
 source("./src/squeezing/squeezing_master.R")
 
-source("./src/uncertainty/uncertainty_master.R")
+#source("./src/uncertainty/uncertainty_master.R")
 
 source("./src/results/results_master.R")
