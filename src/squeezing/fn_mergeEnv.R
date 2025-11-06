@@ -8,10 +8,10 @@ fn_mergeEnv <- function(CSMF, ENV){
   #' @param ENV Data frame age-specific IGME envelopes for crisis-free and crisis-included deaths and rates.
   #' @return Data frame with predicted CSMFs and envelopes.
   
-  env <- ENV[, names(ENV) %in% c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2")]
+  env <- ENV[, names(ENV) %in% c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2")]
   
   # Merge on IGME envelopes
-  dat <- merge(CSMF, env, by = idVars, all.x = T)
+  dat <- merge(CSMF, env, by = c("iso3", "year"), all.x = T)
   
   return(dat)
   

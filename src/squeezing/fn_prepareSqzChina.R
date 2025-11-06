@@ -17,13 +17,13 @@ fn_prepareSqzChina <- function(CSMF, DAT_HIV, DAT_CRISIS, FRAC_CD){
   # FRAC_CD <- frac_cd
   
   # Merge on HIV
-  dat <- merge(CSMF, DAT_HIV, by = idVars, all.x = T)
+  dat <- merge(CSMF, DAT_HIV, by = c("iso3", "year"), all.x = T)
   
   # Merge on epidemic crisis
   # dat <- merge(dat, DAT_CRISIS[, names(DAT_CRISIS)[!names(DAT_CRISIS) %in% c("CollectVio", "NatDis")]], 
   #              by = idVars, all.x = T)
-  dat <- merge(dat, DAT_CRISIS[, names(DAT_CRISIS)[!names(DAT_CRISIS) %in% c("end_colvio", "end_natdis", "end_othercd")]], 
-               by = idVars, all.x = T)
+  dat <- merge(dat, DAT_CRISIS[, names(DAT_CRISIS)[!names(DAT_CRISIS) %in% c("end_colvio", "end_natdis", "end_othercd", "end_diar", "end_othercd_prorata")]], 
+               by = c("iso3", "year"), all.x = T)
   
   # Merge on minimum CD fraction and convert to deaths
   dat$minCD <- dat$Deaths1 * FRAC_CD

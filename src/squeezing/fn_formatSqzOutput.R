@@ -48,7 +48,7 @@ fn_formatSqzOutput <- function(DTH, DTH_CHN = NULL, CSMF_NOTSQZ, CSMF_NOTSQZ_CHN
   dat[, paste(v_cod)] <- dat[, paste(v_cod)]/dat$Deaths2
   
   # Select columns of interest
-  v_cols <- c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
+  v_cols <- c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
   v_cols <- v_cols[v_cols %in% names(dat)]
   dat <- dat[, paste(v_cols)]
   
@@ -59,7 +59,7 @@ fn_formatSqzOutput <- function(DTH, DTH_CHN = NULL, CSMF_NOTSQZ, CSMF_NOTSQZ_CHN
     dat_noDeaths_CHN <- csmf_notsqz_CHN[which(csmf_notsqz_CHN$Deaths1 == 0), ]
   }
   if(nrow(dat_noDeaths) > 0){
-    v_cols <- c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
+    v_cols <- c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
     v_cols <- v_cols[v_cols %in% names(dat_noDeaths)]
     dat_noDeaths <- dat_noDeaths[, paste(v_cols)]
     # Add zeros for crisis CSMFs in those years
@@ -69,7 +69,7 @@ fn_formatSqzOutput <- function(DTH, DTH_CHN = NULL, CSMF_NOTSQZ, CSMF_NOTSQZ_CHN
   # These were excluded in fn_prepareSqzChina()
   if(!is.null(DTH_CHN)){
     if(nrow(dat_noDeaths_CHN) > 0 ){
-      v_cols <- c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
+      v_cols <- c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
       v_cols <- v_cols[v_cols %in% names(dat_noDeaths_CHN)]
       dat_noDeaths_CHN <- dat_noDeaths_CHN[, paste(v_cols)]
       # Add zeros for crisis CSMFs in those years
@@ -79,7 +79,7 @@ fn_formatSqzOutput <- function(DTH, DTH_CHN = NULL, CSMF_NOTSQZ, CSMF_NOTSQZ_CHN
   }
   
   # Tidy up
-  dat <- dat[order(dat[[idVars[1]]], dat[[idVars[2]]]), ]
+  dat <- dat[order(dat$iso3, dat$year), ]
   rownames(dat) <- NULL
   
   return(dat)

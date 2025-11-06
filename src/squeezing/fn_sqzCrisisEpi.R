@@ -12,7 +12,9 @@ fn_sqzCrisisEpi <- function(CSMF, KEY_CODLIST){
   # CSMF <- csmf_crisisEndSQZ
   # # CSMF <- csmf_othercmpnSQZ_CHN
   # KEY_CODLIST <- key_codlist
-  
+  # CSMF <- csmfDraws_crisisEndSQZ[[1]]
+  # KEY_CODLIST <- key_codlist
+
   dat <- CSMF
   
   # Vector with all causes of death (including single-cause estimates)
@@ -52,7 +54,14 @@ fn_sqzCrisisEpi <- function(CSMF, KEY_CODLIST){
   # communicable deaths + proportion of deaths in each communicable cause * othercdprorata * epi deaths
   v_allcd <- c("OtherCMPN", "LRI", "Diarrhoeal", "TB")
   v_allcd <- v_allcd[v_allcd %in% v_cod]
-  dat[,v_allcd] <- dat[,v_allcd] + dat[,v_allcd]/rowSums(dat[,v_allcd]) * dat$epi_othercd_prorata * (dat$Deaths2 - dat$Deaths1)
+  v_idOthercd <- which(rowSums(dat[,v_allcd]) > 0)
+  if(length(v_idOthercd) > 0){
+    dat[v_idOthercd, v_allcd] <- dat[v_idOthercd,v_allcd] + 
+                                  dat[v_idOthercd, v_allcd]/rowSums(dat[v_idOthercd, v_allcd]) * 
+                                    dat[v_idOthercd, "epi_othercd_prorata"] * 
+                                      (dat[v_idOthercd, "Deaths2"] - dat[v_idOthercd, "Deaths1"])
+  }
+  
   
   # Distribute epidemic deaths attributed to all causes pro-rata
   #v_idEpi <- which(dat$epi_colvio + dat$epi_natdis == 0 & dat$Deaths2 > dat$Deaths1)

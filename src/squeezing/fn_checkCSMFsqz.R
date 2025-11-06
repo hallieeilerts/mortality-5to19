@@ -8,9 +8,10 @@ fn_checkCSMFsqz <- function(CSMF, KEY_CODLIST){
   #' @param KEY_COD Data frame with age-specific CODs with different levels of classification.
   #' @return Data frame with rows where fractions for country-year do not add up to 1 or contain an NA.
   
-  # testing
-  CSMF <- csmf_SQZ
-  KEY_CODLIST <- key_codlist
+  # # testing
+  # CSMF <- csmf_SQZ
+  # CSMF <- csmfDraws_SQZ[[2]]
+  # KEY_CODLIST <- key_codlist
   
   dat <- CSMF
   

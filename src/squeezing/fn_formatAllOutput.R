@@ -15,7 +15,7 @@ fn_formatAllOutput <- function(CSMF_ALL, KEY_CODLIST){
   #v_cod <- unique(subset(KEY_CODLIST, !is.na(cod_reported))$cod_reported)   
   
   # Arrange columns
-  v_cols <- c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
+  v_cols <- c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2", v_cod)
   v_cols <- v_cols[v_cols %in% names(dat)]
   dat <- dat[, paste(v_cols)]
   
