@@ -24,12 +24,12 @@ fn_randDrawEnv <- function(L_ENVDRAWS, V_SAMPLE){
   l_rates2 <- lapply(V_SAMPLE, function(x){ L_ENVDRAWS$rates2[[x]] })
   
   # Merge
-  l_draws_samp <- mapply(function(x, y) merge(x, y, by = idVars, all=TRUE), x = l_deaths1, y = l_deaths2, SIMPLIFY = FALSE)
-  l_draws_samp <- mapply(function(x, y) merge(x, y, by = idVars, all=TRUE), x = l_draws_samp, y = l_rates2, SIMPLIFY = FALSE)
+  l_draws_samp <- mapply(function(x, y) merge(x, y, by = c("iso3", "year"), all=TRUE), x = l_deaths1, y = l_deaths2, SIMPLIFY = FALSE)
+  l_draws_samp <- mapply(function(x, y) merge(x, y, by = c("iso3", "year"), all=TRUE), x = l_draws_samp, y = l_rates2, SIMPLIFY = FALSE)
   
   # Tidy up
-  l_draws_samp <- lapply(l_draws_samp, function(x){ x[order(x$ISO3, x$Year),] })
-  l_draws_samp <- lapply(l_draws_samp, function(x){ x[, c(idVars, sort(names(x)[!(names(x) %in% idVars)]))] })
+  l_draws_samp <- lapply(l_draws_samp, function(x){ x[order(x$iso3, x$year),] })
+  l_draws_samp <- lapply(l_draws_samp, function(x){ x[, c("iso3", "year", sort(names(x)[!(names(x) %in% c("iso3", "year"))]))] })
   
   return(l_draws_samp)
 }

@@ -21,7 +21,7 @@ fn_randAssignTB <- function(CSMFDRAW){
                                           UB = dat$tb_ub[v_idSqz])
   }
   
-  if(respTB){
+  if(ageSexSuffix %in% c("05to09y", "10to14y")){
     
     # Cap the upper bound of TB to the envelope
     dat$tbre_ub[which(dat$tbre_ub > dat$Deaths1)] <- dat$Deaths1[which(dat$tbre_ub > dat$Deaths1)]

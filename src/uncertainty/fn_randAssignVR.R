@@ -1,7 +1,7 @@
 
 #CSMF <- csmfList_envADD_CHN[[1179]]
 
-fn_randAssignVR <- function(CSMF, KEY_COD, CTRYGRP){
+fn_randAssignVR <- function(CSMF, KEY_CODLIST, CTRYGRP){
   
   #' @title Randomly assign CSMF values for goodvr/China for current draw
   # 
@@ -16,13 +16,25 @@ fn_randAssignVR <- function(CSMF, KEY_COD, CTRYGRP){
     stop("Must set CTRYGRP as either GOODVR or CHN")
   }
   
+  # # testing
+  # CSMF <- csmfList_envADD_GOODVR[[1]]
+  # KEY_COD <- key_cod
+  # CTRYGRP <- "GOODVR"
+  # CSMF <- csmfList_envADD_CHN[[1]]
+  # KEY_COD <- key_cod
+  # CTRYGRP <- "CHN"
+  
   dat <- CSMF
   
   # Vector with all causes of death (including single-cause estimates)
-  v_cod <- unique(KEY_COD$Reclass)  
-  v_cod <- v_cod[!v_cod %in% c("Other", "Undetermined")]
-  # If China, also exclude HIV as this will be added through squeezing
-  if(CTRYGRP == "CHN"){ 
+  # v_cod <- unique(KEY_COD$cod_reclass)  
+  # v_cod <- v_cod[!v_cod %in% c("Other", "Undetermined")]
+  # v_cod <- v_cod[!is.na(v_cod)]
+  # Vector with all causes of death (including single-cause estimates)
+  v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
+  
+  # If China, exclude HIV as this has been reclassified to OtherCMPN and will subsequently be added through squeezing
+  if(CTRYGRP == "CHN"){
     v_cod <- v_cod[v_cod != "HIV"]
   }
   
@@ -41,12 +53,12 @@ fn_randAssignVR <- function(CSMF, KEY_COD, CTRYGRP){
   idAdjust <- which(is.na(dat$OtherCMPN))
   if (length(idAdjust) > 0) {
     for (i in idAdjust) {
-      if (dat$Year[i] == min(Years)) {
-        dat[i, !names(dat) %in% c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2")] <-
-          dat[i+1, !names(dat) %in% c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2")]  
+      if (dat$year[i] == min(Years)) {
+        dat[i, !names(dat) %in% c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2")] <-
+          dat[i+1, !names(dat) %in% c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2")]  
       } else {
-        dat[i, !names(dat) %in% c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2")] <-
-          dat[i-1, !names(dat) %in% c(idVars, "Deaths1", "Rate1", "Deaths2", "Rate2")]
+        dat[i, !names(dat) %in% c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2")] <-
+          dat[i-1, !names(dat) %in% c("iso3", "year", "Deaths1", "Rate1", "Deaths2", "Rate2")]
       }
     }
   }
