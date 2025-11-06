@@ -55,12 +55,7 @@ csmf_SQZ <- fn_formatSqzOutput(dth_SQZ, dth_SQZ_CHN, csmf_envADD, csmf_envADD_CH
 
 # Audit: check if squeezed CSMFs add up to 1 or contain NA
 csmf_SQZ_AUD <- fn_checkCSMFsqz(csmf_SQZ, key_codlist)
-if(nrow(csmf_SQZ_AUD) > 0){
-  write.csv(csmf_SQZ_AUD, paste("./gen/squeezing/audit/csmf_SQZ_AUD_", ageSexSuffix,".csv", sep=""), row.names = FALSE)
-}
-# For 5-9y, 10-14, 15-19yf, only happens when Deaths1 == 0
-nrow(subset(csmf_SQZ_AUD, Deaths1 != 0)) # 0
-# One case of 15-19ym when csmf sum is 0.999 (China 2005)
+write.csv(csmf_SQZ_AUD, paste("./gen/squeezing/audit/csmf_SQZ_AUD_", ageSexSuffix,".csv", sep=""), row.names = FALSE)
 
 # Combine squeezed output from modeled countries (HMM and LMM) and China with GOODVR, format, save
 csmfSqz <- rbind(csmf_SQZ, csmf_envADD_GOODVR)
@@ -68,20 +63,5 @@ csmfSqz <- fn_formatAllOutput(csmfSqz, key_codlist)
 write.csv(csmfSqz, paste("./gen/squeezing/output/csmfSqz_", ageSexSuffix, ".csv", sep=""), row.names = FALSE)
 
 # Calculate regional CSMFs
-env_REG$year <- env_REG$Year 
-env_REG$Year <- NULL
-csmfSqz_REG <- fn_calcRegion(csmfSqz, env_REG, codAll, key_region)
-# BARCELONA MEETING: REMOVES REGIONS IF NOT ALL COUNTRIES IN REGION REPORTED
-v_remove <- c()
-for(i in 1:length(unique(csmfSqz_REG$Region))){
-  datAux <- merge(csmfSqz, key_region, by = "iso3")  
-  datAux <- subset(datAux, Region == unique(csmfSqz_REG$Region)[i])
-  keyAux <- subset(key_region, Region == unique(csmfSqz_REG$Region)[i])
-  if(!all(keyAux$iso3 %in% unique(datAux$iso3))){
-    v_remove <- c(v_remove, unique(csmfSqz_REG$Region)[i])
-  }
-}
-if(length(v_remove) > 0){
-  csmfSqz_REG <- subset(csmfSqz_REG, !(Region %in% v_remove))
-}
-write.csv(csmfSqz_REG, paste("./gen/squeezing/output/csmfSqz_", ageSexSuffix, "REG.csv", sep=""), row.names = FALSE)
+csmfSqz_REG <- fn_calcRegion(CSMF = csmfSqz, ENV_REGION = NULL, KEY_REGION = key_region, KEY_CODLIST = key_codlist)
+write.csv(csmfSqz_REG, paste("./gen/squeezing/output/csmfSqz_", ageSexSuffix, "_REG.csv", sep=""), row.names = FALSE)

@@ -15,10 +15,6 @@ source("./src/squeezing/fn_formatSqzOutput.R")
 source("./src/squeezing/fn_checkCSMFsqz.R")
 source("./src/squeezing/fn_formatAllOutput.R")
 source("./src/squeezing/fn_calcRegion.R")
-
-source("./src/squeezing/fn_sqzCrisisEnd_old.R")
-source("./src/squeezing/fn_sqzCrisisEpi_old.R") # for recreating estimates after switch from jags to stan
-# which were done with old single cause data
 ################################################################################
 
 
