@@ -7,7 +7,6 @@ rm(list = ls())
 #' Libraries
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
-source("./src/prepare-session/create-session-variables.R")
 source("./src/estimation/fn_setRefCat.R")
 model <- "HMM"
 if(model == "HMM"){
@@ -16,16 +15,10 @@ if(model == "HMM"){
   dat_filename <- dat_filename[grepl("modinput2023-hmm-deaths", dat_filename, ignore.case = TRUE)]
   dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
   load(paste0("./data/model-objects/",dat_filename, sep = ""))
-  # dat_filename <- list.files("./data/study-database/")
-  # dat_filename <- dat_filename[grepl("modinput2023-studies", dat_filename, ignore.case = TRUE)]
-  # dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
-  # load(paste0("./data/study-database/",dat_filename, sep = ""))
-  # Load in entire study db spreadsheet instead since not decided on covariates
-  dat_filename <- list.files("./data/study-database/")
-  dat_filename <- dat_filename[grepl("studydatabase2023_", dat_filename, ignore.case = TRUE)]
-  dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
-  dat_filename <- dat_filename[!grepl("Codebook", dat_filename)] 
-  studies <- read.csv(paste0("./data/study-database/", dat_filename))
+  dat_filename <- list.files("./data/model-objects/")
+  dat_filename <- dat_filename[grepl("modinput2023-hmm-studies", dat_filename, ignore.case = TRUE)]
+  dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)]
+  load(paste0("./data/model-objects/", dat_filename, sep = ""))
 }
 if(model == "LMM"){
   ## Model inputs for LMM
@@ -33,22 +26,19 @@ if(model == "LMM"){
   dat_filename <- dat_filename[grepl("modinput2023-lmm-deaths", dat_filename, ignore.case = TRUE)]
   dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
   load(paste0("./data/model-objects/",dat_filename, sep = ""))
-  # dat_filename <- list.files("./data/study-database/")
-  # dat_filename <- dat_filename[grepl("modinput2023-lmm-studies", dat_filename, ignore.case = TRUE)]
-  # dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
-  # load(paste0("./data/study-database/",dat_filename, sep = ""))
-  # Load in entire lmm spreadsheet instead since not decided on covariates
-  dat_filename <- list.files("./data/lmm-database/")
-  dat_filename <- dat_filename[grepl("studydatabase2023-lmm_", dat_filename, ignore.case = TRUE)]
-  dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
-  dat_filename <- dat_filename[!grepl("Codebook", dat_filename)] 
-  studies <- read.csv(paste0("./data/lmm-database/", dat_filename))
-  
+  dat_filename <- list.files("./data/model-objects/")
+  dat_filename <- dat_filename[grepl("modinput2023-lmm-studies", dat_filename, ignore.case = TRUE)]
+  dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)]
+  load(paste0("./data/model-objects/",dat_filename, sep = ""))
 }
 ## Classification keys
 #key_cod <- read.csv(paste("./gen/data-management/output/key_cod_", ageSexSuffix, ".csv", sep=""))
 #key_codlist <- read.csv(paste("./gen/data-management/output/key_codlist_", ageSexSuffix, ".csv", sep=""))
-df_covar <- readxl::read_excel("./data/classification-keys/CovariateDatabase2023_ModelCovariateList_20250618.xlsx", sheet = "model-covar-long")
+#df_covar <- readxl::read_excel("./data/classification-keys/CovariateDatabase2023_ModelCovariateList_20250618.xlsx", sheet = "model-covar-long")
+dat_filename <- list.files("./data/keys/")
+dat_filename <- dat_filename[grepl("CovariateDatabase2023_ModelCovariateList", dat_filename, ignore.case = TRUE)]
+dat_filename <- tail(sort(dat_filename), 1)
+df_covar <- readxl::read_excel(paste0("./data/keys/",dat_filename), sheet = "model-covar-long")
 #############################################################################################
 
 if(length(unique(deaths$sid)) != length(unique(studies$sid))){
@@ -69,7 +59,7 @@ if(model == "LMM"){
 
 
 #vdt <- as.factor(c(refCat, paste(vdt[vdt != refCat])))
-sex <- sexLabel
+#sex <- sexLabel
 
 # to create model input studies
 # v_idvars <- c("recnr","id", "reterm", "totdeaths")

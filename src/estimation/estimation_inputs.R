@@ -5,19 +5,14 @@
 # Clear environment
 rm(list = ls())
 #' Libraries
-library(tidyverse)
+library(tidyr)
+library(dplyr)
 library(rstan)
-library(rstudioapi) # need only for estimation
-library(callr) # need only for estimation
-library(ggforce)  # need only for estimation?
-library(bayesplot) # need only for estimation?
-library(MCMCvis) # prob dont need
-library(rlang) # not sure
-library(here) # for st.patho
+library(rstudioapi)
+library(here)
 library(readxl)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
-source("./src/prepare-session/create-session-variables.R")
 
 # Covariate names
 dat_filename <- list.files("./data/keys/")
@@ -32,11 +27,38 @@ dat_filename <- tail(sort(dat_filename), 1)
 dat_cod <- read_excel(paste0("./data/keys/",dat_filename))
 
 # Hyperparameters
-dat_filename <- list.files("./data/model-objects/")
+dat_filename <- list.files("./data/keys/")
 dat_filename <- dat_filename[grepl("modelhyperparameters", dat_filename, ignore.case = TRUE)]
 dat_filename <- tail(sort(dat_filename), 1)
-dat_hp <- readRDS(paste0("./data/model-objects/",dat_filename))
+dat_hp <- read.csv(paste0("./data/keys/",dat_filename))
 
+# Model objects HMM
+dat_filename <- list.files("./data/model-objects/")
+dat_filename <- dat_filename[grepl("deaths", dat_filename, ignore.case = TRUE)]
+dat_filename <- dat_filename[grepl("HMM", dat_filename)] 
+dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
+load(paste0("./data/model-objects/", dat_filename, sep = ""))
+dat_filename <- list.files("./data/model-objects/")
+dat_filename <- dat_filename[grepl("studies", dat_filename, ignore.case = TRUE)]
+dat_filename <- dat_filename[grepl("HMM", dat_filename)] 
+dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
+load(paste0("./data/model-objects/",dat_filename, sep = ""))
+mod_dat_HMM <- list(deaths, studies)
+names(mod_dat_HMM) <- c("deaths", "studies")
+
+# Model objects LMM
+dat_filename <- list.files("./data/model-objects/")
+dat_filename <- dat_filename[grepl("deaths", dat_filename, ignore.case = TRUE)]
+dat_filename <- dat_filename[grepl("LMM", dat_filename)] 
+dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
+load(paste0("./data/model-objects/", dat_filename, sep = ""))
+dat_filename <- list.files("./data/model-objects/")
+dat_filename <- dat_filename[grepl("studies", dat_filename, ignore.case = TRUE)]
+dat_filename <- dat_filename[grepl("LMM", dat_filename)] 
+dat_filename <- dat_filename[grepl(ageSexSuffix, dat_filename)] 
+load(paste0("./data/model-objects/",dat_filename, sep = ""))
+mod_dat_LMM <- list(deaths, studies)
+names(mod_dat_LMM) <- c("deaths", "studies")
 ################################################################################
 
 

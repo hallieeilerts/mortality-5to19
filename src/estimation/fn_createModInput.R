@@ -75,7 +75,7 @@ fn_createModInput <- function(AGESEXSUFFIX, MODEL, MOD_DAT, DAT_COVAR, DAT_COD, 
   
   # Create st.input object for stan (check the hyperparameters and other options..!!)
   st_input <- list(
-    model = stan_model(file='./src/estimation2025/cacode_DP.stan', auto_write = TRUE),
+    model = stan_model(file='./src/estimation/cacode_DP.stan', auto_write = TRUE),
     studies = studies,
     deaths = deaths,
     lambda = lam,   # lambda for lasso
@@ -91,7 +91,7 @@ fn_createModInput <- function(AGESEXSUFFIX, MODEL, MOD_DAT, DAT_COVAR, DAT_COD, 
     niter = 4000,
     nwarm = 2000,
     cores = 4,
-    patho = here("./gen/estimation2025/output/"), # path to store model output
+    patho = here("./gen/estimation/output/"), # path to store model output
     name = paste0("Stan_", MODEL, "_", AGESEXSUFFIX, "_", resd, "_", lam), # name of the model
     summary = 0  # put 0 if you want to save all the posterior samples of the parameters to estimate, or 1 if you only want to save the summaries of the posterior distributions  
   )
