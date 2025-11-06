@@ -9,12 +9,6 @@ rm(list = ls())
 source("./src/prediction/prediction_inputs.R")
 source("./src/prediction/prediction_functions.R")
 
-# # old hyperparameter values
-# dat_hp$lamb[dat_hp$AgeSexSuffix == "05to09y" & dat_hp$Model == "HMM"] <- 75
-# dat_hp$lamb[dat_hp$AgeSexSuffix == "10to14y" & dat_hp$Model == "HMM"] <- 50
-# dat_hp$lamb[dat_hp$AgeSexSuffix == "15to19yF" & dat_hp$Model == "HMM"] <- 50
-dat_hp$lamb[dat_hp$AgeSexSuffix == "15to19yM" & dat_hp$Model == "HMM"] <- 400
-
 # Load HMM and LMM model fit
 mod_fit_HMM <- fn_loadModFit(ageSexSuffix, "HMM", dat_hp)
 mod_fit_LMM <- fn_loadModFit(ageSexSuffix, "LMM", dat_hp)
@@ -27,47 +21,25 @@ mod_mat_LMM <- fn_par(mod_fit_LMM)
 mod_pred_LMM <- fn_pr2(mod_mat_LMM, dat_pred, "LMM", key_ctryclass)
 csmf_LMM <- fn_reshapePr2(mod_pred_LMM)
 
+# Draws of point estimates for uncertainty calculations
+csmfDraws_HMM <- fn_reshapePr2(mod_pred_HMM, UNCERTAINTY = TRUE)
+csmfDraws_LMM <- fn_reshapePr2(mod_pred_LMM, UNCERTAINTY = TRUE)
+
 # Set malaria fractions
 if(ageSexSuffix %in% c("05to09y", "10to14y")){
   csmf_HMM <- fn_capMalFrac(csmf_HMM, cases_malaria_05to19, frac_malaria_01to04)
   csmf_LMM <- fn_setMalFrac(csmf_LMM)
+  csmfDraws_HMM <- lapply(csmfDraws_HMM, function(x){fn_capMalFrac(x, cases_malaria_05to19, frac_malaria_01to04) })
+  csmfDraws_LMM <- lapply(csmfDraws_LMM, function(x){fn_setMalFrac(x) })
 }
 
-# Format predicted CSMFs, save
+# Format predicted CSMFs
 csmf <- fn_formatPrediction(csmf_HMM, csmf_LMM)
-write.csv(csmf, paste("./gen/prediction/output/csmf_", ageSexSuffix, ".csv",sep=""), row.names = FALSE)
+csmfDraws <- mapply(fn_formatPrediction, csmfDraws_HMM, csmfDraws_LMM, SIMPLIFY = FALSE)
+
+# Save
+write.csv(csmf, paste0("./gen/prediction/output/csmf_", ageSexSuffix, ".csv"), row.names = FALSE)
+saveRDS(csmfDraws, paste0("./gen/uncertainty/input/csmfDraws_", ageSexSuffix, ".rds"))
 
 # Unload MASS which was loaded for fn_pr2 and is masking dplyr::select()
-#detach("package:MASS", unload=TRUE)
-detach("package:ggforce")
 detach("package:MASS")
-
-
-
-
-
-
-# # Compare india RE to state averaged RE
-# # run first with India state RE averaging
-# dat1 <- subset(mod_predSum_HMM$Pred, type == "random") %>%
-#   filter(type == "random" & iso3 == "IND") %>%
-#   select(iso3, year, cause, p_50) %>%
-#   mutate(source = "state RE avg")
-# # Comment India state RE averaging out in fn_pr2 and run again
-# dat2 <- subset(mod_predSum_HMM$Pred, type == "random") %>%
-#   filter(type == "random" & iso3 == "IND") %>%
-#   select(iso3, year, cause, p_50) %>%
-#   mutate(source = "nat RE")
-# dat3 <- rbind(dat1, dat2)
-# dat3 %>%
-#   ggplot(aes(x = year, y = p_50, col = source)) +
-#   geom_point() + geom_line() +
-#   facet_wrap(~cause)
-
-# check_rhat <- summary(mod_fit_HMM$st.output)$summary
-# check_rhat %>%
-#   as.data.frame() %>%
-#   rownames_to_column(var = "param") %>%
-#   mutate(param_type = substr(param, 1, 2)) %>%
-#   group_by(param_type) %>%
-#   summarise(mean(Rhat))

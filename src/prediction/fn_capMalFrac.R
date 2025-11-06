@@ -11,7 +11,7 @@ fn_capMalFrac <- function(CSMF, DAT_MALARIA_05to19, FRAC_MALARIA_01to04){
   
   # Identify COD
   v_cod <- names(CSMF)
-  v_cod <- v_cod[!(v_cod %in% idVars)]
+  v_cod <- v_cod[!(v_cod %in% c("iso3", "year"))]
   
   ### Merge on malaria cases
   
@@ -27,7 +27,7 @@ fn_capMalFrac <- function(CSMF, DAT_MALARIA_05to19, FRAC_MALARIA_01to04){
   }
   
   # Remove unnecessary columns
-  v_remove <- names(DAT_MALARIA_05to19)[!(names(DAT_MALARIA_05to19) %in% idVars)]
+  v_remove <- names(DAT_MALARIA_05to19)[!(names(DAT_MALARIA_05to19) %in% c("iso3", "year"))]
   dat <- dat[, !(names(dat) %in% v_remove)]
   
   ### Merge on malaria 1-59 month CSMF
@@ -50,7 +50,7 @@ fn_capMalFrac <- function(CSMF, DAT_MALARIA_05to19, FRAC_MALARIA_01to04){
   }
   
   # Remove unnecessary data
-  v_remove <- names(FRAC_MALARIA_01to04)[!(names(FRAC_MALARIA_01to04) %in% idVars)]
+  v_remove <- names(FRAC_MALARIA_01to04)[!(names(FRAC_MALARIA_01to04) %in% c("iso3", "year"))]
   dat <- dat[, !(names(dat) %in% v_remove)]
   
   # Tidy up

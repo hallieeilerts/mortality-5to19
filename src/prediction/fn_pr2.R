@@ -12,9 +12,9 @@ fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
   ## PLW  distinguishes between preterm and low birth weight as COD (1/0)
   
   # # testing
-  # PA <- mod_mat_HMM
+  # PA <- mod_mat_LMM
   # NPD <- dat_pred
-  # MODEL <- "HMM"
+  # MODEL <- "LMM"
   # KEY_CTRYCLASS <- key_ctryclass
   # ID <- "pid"
   # PE <- "any"
@@ -37,11 +37,7 @@ fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
   RISO <- dimnames(PA$RM)[[2]] # Countries with random effects in the model
   
   # Prepare raw variables dataset from prediction sample
-  DX <- mutate(NPD, 
-               #per.early=ifelse(PE=="early",1,0),
-               #per.late=ifelse(PE=="late",1,0),
-               #premvslbw=PLW
-  ) %>%
+  DX <- NPD %>%
     dplyr::select(all_of(c(ID, "iso3","year", VXF)))
   # Scale the numerical columns with means and SD from model
   DX[,VXN] <- scale(DX[,VXN], PA$st.data$xmeans, PA$st.data$xsd)
@@ -59,8 +55,7 @@ fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
     mutate(pe.q2=exp(pe.q2)/sum(exp(pe.q2))) %>%
     ungroup() %>%
     left_join(POE)
-  
-  
+
   # Edit for 5-19: replace random effect for IND in PA$RM with 
   # weighted average of state random effects for India
   if("IND" %in% v_ctries){
@@ -118,8 +113,11 @@ fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
   # loop through number of mcmc samples
   for (i in 1:N){
     # First calculate random effects of countries in estimation sample
-    LOi <- rownames_to_column(as.data.frame(PA$RM[i,REXi,]), var="iso3") %>%
-      # add randomly drawn random effects for countries not in estimation sample
+    LOi <- as.data.frame(PA$RM[i, REXi, ])
+    LOi <- cbind(iso3 = rownames(LOi), LOi)
+    row.names(LOi) <- NULL
+    # add randomly drawn random effects for countries not in estimation sample
+    LOi <- LOi %>%
       bind_rows(cbind(data.frame(iso3=REXo), mvrnorm(length(REXo), rep(0,C), cov(PA$RM[i,,])))) %>% 
       pivot_longer(cols=dimnames(PA$RM)[[3]], names_to="cod", values_to="ref")
     # Calculate fixed effects and add the random effects:
@@ -130,7 +128,8 @@ fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
   }
   LO <- mutate(LO, fref = fef + ref) %>%
     group_by(pid, sample) %>% 
-    mutate(pf=exp(fef)/sum(exp(fef)), pr=exp(fref)/sum(exp(fref))) %>%
+    mutate(pf=exp(fef)/sum(exp(fef)), 
+           pr=exp(fref)/sum(exp(fref))) %>%
     ungroup()
   
   return(list(Point_estimates=POE, 

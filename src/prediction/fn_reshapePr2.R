@@ -9,24 +9,32 @@ fn_reshapePr2 <- function(DAT, UNCERTAINTY = FALSE){
   
   # # testing
   # DAT <- mod_pred_HMM
-  # UNCERTAINTY <- FALSE
+  # UNCERTAINTY <- TRUE
   
-  # Point estimates from fit
-  csmf <- DAT$Point_estimates %>%
-    pivot_wider(
-      id_cols = c(iso3, year),
-      names_from = cod,
-      values_from = pe.q2
-    )
+  # Point estimate predictions (median of coefficients)
+  if(!UNCERTAINTY){
+    csmf <- DAT$Point_estimates %>%
+      pivot_wider(
+        id_cols = c(iso3, year),
+        names_from = cod,
+        values_from = pe.q2
+      )
+  }
   
-  # # All predictions from fit (prediction with just fixed effects (pf) and fixed plus random (pr))
-  # # Use this for uncertainty?
-  # if(UNCERTAINTY){
-    # DAT$Predictions %>% 
-    #   pivot_longer(cols=c(pf:pr), names_to="model", values_to="value") %>%
-    #   arrange(iso3, year, sample, cod, model)
-  # }
+  # Uncertainty predictions (point estimates from each draw)
+  if(UNCERTAINTY){
+    csmf <- DAT$Predictions %>%
+      pivot_wider(
+        id_cols = c(sample, iso3, year),
+        names_from = cod,
+        values_from = pr
+      )
+    csmf <- split(csmf, csmf$sample)
+    csmf <- lapply(csmf, function(x){ row.names(x) <- NULL; return(x) })
+    csmf <- lapply(csmf, function(x){ x$sample <- NULL; return(x) })
+    
+  }
 
-  
   return(csmf)
+  
 }

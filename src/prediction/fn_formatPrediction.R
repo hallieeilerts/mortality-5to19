@@ -19,7 +19,7 @@ fn_formatPrediction <- function(CSMF_HMM = NULL, CSMF_LMM = NULL){
   }
   
   # Rearrange columns
-  dat <- dat[, c(idVars[1:2], sort(names(dat)[which(!names(dat) %in% idVars[1:2])]))] 
+  dat <- dat[, c(c("iso3", "year"), sort(names(dat)[which(!names(dat) %in% c("iso3", "year"))]))] 
   
   # Tidy up
   dat <- dat[order(dat$iso3, dat$year),]

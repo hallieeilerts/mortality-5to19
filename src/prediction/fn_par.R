@@ -2,14 +2,15 @@
 ####
 ####   Gather model data from stanfit object, for prediction
 ####
-fn_par <- function(MO, NP=500){
+fn_par <- function(MO, NP = 2000){
   ## MO    Stan object with posterior MCMC coefficient distribution
   ## NP    Number of coefficient sets from which to estimate credible intervals
   # Recover simulation parameters from Stan output
   
-  # testing
-  #MO <- mod_fit_HMM
-  #NP <- 500
+  # # testing
+  # MO <- mod_fit_HMM
+  # NP <- 500
+  # UNCERTAINTY <- TRUE
   
   SA <- rstan::extract(MO$st.output) 
   
@@ -17,11 +18,11 @@ fn_par <- function(MO, NP=500){
   SS <- sample(dim(SA$B)[1], NP) 
   
   # Means of beta-parameters (add column for reference COD)
-  MEB <- cbind(rep(0, dim(SA$B)[2]), apply(SA$B,c(2,3),mean))
+  MEB <- cbind(rep(0, dim(SA$B)[2]), apply(SA$B,c(2,3), mean))
   dimnames(MEB) <- list(dimnames(MO$st.data$Xmat)[[2]],
                         dimnames(MO$st.data$Missreport)[[2]])
   # Medians of beta-parameters (add column for reference COD)
-  Q2B <- cbind(rep(0, dim(SA$B)[2]), apply(SA$B,c(2,3),median))
+  Q2B <- cbind(rep(0, dim(SA$B)[2]), apply(SA$B,c(2,3), median))
   dimnames(Q2B) <- list(dimnames(MO$st.data$Xmat)[[2]],
                         dimnames(MO$st.data$Missreport)[[2]])
   # prepare array of fixed effects
@@ -47,6 +48,7 @@ fn_par <- function(MO, NP=500){
   # Add names to matrix
   dimnames(SM) <- list(c(1:NP),
                        dimnames(MO$st.data$Missreport)[[2]])
+
   
   return(list(BM=BM, RM=RM, SM=SM, MEB=MEB, Q2B=Q2B, st.input=MO$st.input, st.data=MO$st.data))
 }
