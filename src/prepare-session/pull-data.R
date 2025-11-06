@@ -6,6 +6,7 @@
 rm(list = ls())
 #' Libraries
 library(stringr)
+library(fs)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
 source("./src/prepare-session/prepare-session_functions.R")
@@ -19,20 +20,12 @@ for(i in 1:length(dat_filename)){
             to   = paste0("./data/keys/",dat_filename[i]))
 }
 
-# HMM (study) database 
-fn_initEnvironmentData("study-database")
-dat_filename <- list.files(paste0(pathDataWarehouse, "/2000-2023/model-pipeline/study-database", sep = ""))
+# Model inputs
+fn_initEnvironmentData("model-objects")
+dat_filename <- list.files(paste0(pathDataWarehouse, "/2000-2023/model-pipeline/model-objects", sep = ""))
 for(i in 1:length(dat_filename)){
-  file.copy(from = paste0(pathDataWarehouse, "/2000-2023/model-pipeline/study-database/",dat_filename[i], sep = ""),
-            to   = paste0("./data/study-database/",dat_filename[i]))
-}
-
-# LMM database
-fn_initEnvironmentData("lmm-database")
-dat_filename <- list.files(paste0(pathDataWarehouse, "/2000-2023/model-pipeline/lmm-database", sep = ""))
-for(i in 1:length(dat_filename)){
-  file.copy(from = paste0(pathDataWarehouse, "/2000-2023/model-pipeline/lmm-database/",dat_filename[i], sep = ""),
-            to   = paste0("./data/lmm-database/",dat_filename[i]))
+  file.copy(from = paste0(pathDataWarehouse, "/2000-2023/model-pipeline/model-objects/",dat_filename[i], sep = ""),
+            to   = paste0("./data/model-objects/",dat_filename[i]))
 }
 
 # Good VR data
@@ -68,5 +61,23 @@ for(i in 1:length(dat_filename)){
 }
 
 # IGME draws
+fn_initEnvironmentData("igme-draws")
+for (folder in c("5-9", "10-14", "15-19 girls", "15-19 boys")) {
+  dir_copy(
+    path(file.path(pathDataWarehouse, "2000-2023/data/igme", folder)),
+    path(file.path("./data/igme-draws", folder)),
+    overwrite = TRUE
+  )
+}
 
 # Previous results
+fn_initEnvironmentData("previous-results")
+dat_filename <- list.files(paste0(pathDataWarehouse, "/2000-2021/results", sep = ""))
+for(i in 1:length(dat_filename)){
+  file.copy(from = paste0(pathDataWarehouse, "/2000-2021/results/",dat_filename[i], sep = ""),
+            to   = paste0("./data/previous-results/",dat_filename[i]))
+}
+
+
+
+
