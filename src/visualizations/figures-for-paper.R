@@ -12,6 +12,9 @@ library(grid)
 library(gridExtra)
 library(patchwork)
 library(scales)
+library(forcats)
+library(RColorBrewer)
+library(scales)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
 # Classification keys
@@ -268,6 +271,86 @@ p <- aggReg5to19 %>%
   labs(title = "", x= "", y = "")
 ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024.png", sep=""), p, dpi = 500, height = 6, width = 10, units = "in")
 
+
+
+# Figure 2: updated cod labels and colors -------------------------------------------------------
+
+# updated
+# 1.	Color palette similar to the data portal.
+# 2.	Same cause-labels as in data portal, with one exception: merge collective violence and natural disasters in one single category.
+# 3.	Panel titles: “Mortality fractions (%)” and “Number of deaths”
+# 4.	X-axis of the right-panel (fractions): I suggest values to range from 0 to 100 (with no decimal points) instead of 0 to 1.
+# 5.	Legend: ideally, it should span the entire width of the figure, so no empty space on the sides. Perhaps we could distribute items in 3 lines instead of 4?
+#   6.	With the new color palette, my guess is that the borders of the bars are no longer needed, neither in the graph nor in the legend.
+
+options(scipen = 999)
+
+# recode natdis and colvio
+plotDat <- aggReg5to19 %>%
+  mutate(ColVioNatDis = CollectVio + NatDis) %>%
+  select(-c(CollectVio, NatDis))
+
+# data portal order
+v_cod_dp <- c("Diarrhoeal", "HIV",  "LRI", "Malaria", 
+              "Maternal", "Measles" , "TB", "OtherCMPN", "Cardiovascular",
+              "Congenital", "Digestive" ,  "Neoplasms" , "OtherNCD",
+              "Drowning" , "RTI",  "SelfHarm" , "InterpVio" ,
+              "ColVioNatDis", "OtherInj")
+v_cod_lab_dp <- c('Diarrhea', 'HIV/AIDS', 'Lower respiratory\ninfections', 'Malaria',
+         'Maternal causes', 'Measles', 'Tuberculosis', 'Other communicable\ndiseases', 
+         'Cardiovascular', 'Congenital anomalies', 'Digestive system', 
+         'Neoplasms/cancer', 'Other NCDs',
+         'Drowning', 'Road traffic injuries', 'Self-harm', 
+         'Interpersonal violence', 'Collective violence and\nnatural disasters',
+         'Other injuries')
+
+# Color palette 1: Communicable diseases of all ages
+col1 <- brewer.pal(9, 'Oranges')[3:9]
+col1 <- c(col1[1:4], 'plum1', col1[5:length(col1)])
+
+# Color palette 2: Non-communicable diseases
+col2 <- brewer.pal(6, 'Greens')[2:6]
+
+# Color palette 4: Injuries
+col3 <- brewer.pal(7, 'Blues')[2:7]
+
+# Full palette
+colPalette <- c(col1, col2, col3)
+names(colPalette) <- v_cod_lab_dp
+
+
+p <- plotDat  %>%
+  pivot_longer(
+    cols = v_cod_dp,
+    names_to = "COD",
+    values_to = "CSMF"
+  ) %>%
+  mutate(COD = factor(COD, levels = v_cod_dp, labels = v_cod_lab_dp),
+         Region = factor(Region, levels = v_reg_dths)) %>%
+  filter(Region != "World") %>%
+  rename(env = Deaths) %>%
+  mutate(Deaths = CSMF*env) %>%
+  mutate(CSMF = CSMF * 100) %>%
+  pivot_longer(
+    cols = c(Deaths, CSMF),
+    names_to = "Variable",
+    values_to = "Value"
+  ) %>%
+  mutate(Variable = ifelse(Variable == "CSMF", "Mortality fractions (%)", "Number of deaths")) %>%
+  filter(Year == 2024) %>%
+  ggplot(aes(x = Region, y = Value, fill = COD)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = colPalette) +
+  scale_y_continuous(labels = label_comma()) +
+  facet_wrap(~Variable, scales = "free_x") +
+  coord_flip() +
+  theme_minimal() +
+  theme(text = element_text(size = 12),
+        legend.position = "bottom", legend.title = element_blank()) +
+  labs(title = "", x= "", y = "") +
+  guides(fill = guide_legend(nrow = 3, byrow = TRUE))
+
+ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024_v2.png", sep=""), p, dpi = 500, height = 6, width = 10, units = "in")
 
 # Figure 2 interpretation -------------------------------------------------
 
@@ -725,6 +808,9 @@ fig3num %>%
   data.frame()
 
 # Figure 4: average annual rate of reduction ------------------------------
+
+# old figure 4
+# displays all causes
 
 # cause-specific mortality rates
 plotdat1 <- aggReg5to19 %>%
