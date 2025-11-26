@@ -61,12 +61,21 @@ v_reg <- c("Eastern and Southern Africa", "West and central Africa", "Middle Eas
            "Eastern Europe and central Asia","Western Europe",
            "World")
 
+v_reg_lab <- c("Eastern and\nSouthern Africa", "West and central Africa", "Middle East\nand North Africa",
+               "South Asia", "East Asia and Pacific", 
+               "Latin America\nand Caribbean", "North America" ,
+               "Eastern Europe\nand central Asia","Western Europe",
+               "World")
+
 # region order by n 5-19 deaths in 2024
 v_reg_dths <- aggReg5to19 %>%
   filter(Year == 2024) %>%
   arrange(-Deaths) %>%
   select(Region) %>%
   pull()
+
+# reorder labels
+v_reg_lab <- v_reg_lab[match(v_reg_dths, v_reg)]
 
 
 # cod groups
@@ -271,8 +280,6 @@ p <- aggReg5to19 %>%
   labs(title = "", x= "", y = "")
 ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024.png", sep=""), p, dpi = 500, height = 6, width = 10, units = "in")
 
-
-
 # Figure 2: updated cod labels and colors -------------------------------------------------------
 
 # updated
@@ -325,8 +332,8 @@ p <- plotDat  %>%
     names_to = "COD",
     values_to = "CSMF"
   ) %>%
-  mutate(COD = factor(COD, levels = v_cod_dp, labels = v_cod_lab_dp),
-         Region = factor(Region, levels = v_reg_dths)) %>%
+  mutate(COD = factor(COD, levels = rev(v_cod_dp), labels = rev(v_cod_lab_dp)),
+         Region = factor(Region, levels = v_reg_dths, v_reg_lab)) %>%
   filter(Region != "World") %>%
   rename(env = Deaths) %>%
   mutate(Deaths = CSMF*env) %>%
@@ -348,9 +355,9 @@ p <- plotDat  %>%
   theme(text = element_text(size = 12),
         legend.position = "bottom", legend.title = element_blank()) +
   labs(title = "", x= "", y = "") +
-  guides(fill = guide_legend(nrow = 3, byrow = TRUE))
+  guides(fill = guide_legend(nrow = 3, byrow = TRUE, reverse = TRUE))
 
-ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024_v2.png", sep=""), p, dpi = 500, height = 6, width = 10, units = "in")
+ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024_v2.png", sep=""), p, dpi = 500, height = 6, width = 12, units = "in")
 
 # Figure 2 interpretation -------------------------------------------------
 
