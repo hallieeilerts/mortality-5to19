@@ -16,6 +16,7 @@ library(forcats)
 library(RColorBrewer)
 library(scales)
 #' Inputs
+#' setwd('C:/Users/FVillavicencio/Dropbox/Mortality5to19/')
 source("./src/prepare-session/set-inputs.R")
 # Classification keys
 key_ctryclassOld <- read.csv("./gen/data-management/output/key_ctryclassOld_u20.csv")
@@ -61,11 +62,18 @@ v_reg <- c("Eastern and Southern Africa", "West and central Africa", "Middle Eas
            "Eastern Europe and central Asia","Western Europe",
            "World")
 
-v_reg_lab <- c("Eastern and\nSouthern Africa", "West and central Africa", "Middle East\nand North Africa",
-               "South Asia", "East Asia and Pacific", 
+v_reg_lab <- c("Eastern and\nsouthern Africa", "West and\ncentral Africa", "Middle East\nand north Africa",
+               "South Asia", "East Asia\nand Pacific", 
                "Latin America\nand Caribbean", "North America" ,
                "Eastern Europe\nand central Asia","Western Europe",
                "World")
+
+v_reg_lab_nobreaks <- c("Eastern and southern Africa", "West and central Africa", "Middle East and north Africa",
+               "South Asia", "East Asia and Pacific", 
+               "Latin America and Caribbean", "North America" ,
+               "Eastern Europe and central Asia","Western Europe",
+               "World")
+
 
 # region order by n 5-19 deaths in 2024
 v_reg_dths <- aggReg5to19 %>%
@@ -76,7 +84,7 @@ v_reg_dths <- aggReg5to19 %>%
 
 # reorder labels
 v_reg_lab <- v_reg_lab[match(v_reg_dths, v_reg)]
-
+v_reg_lab_nobreaks <- v_reg_lab_nobreaks[match(v_reg_dths, v_reg)]
 
 # cod groups
 df_codgrp <- data.frame(COD = v_cod,
@@ -297,7 +305,7 @@ plotDat <- aggReg5to19 %>%
   mutate(ColVioNatDis = CollectVio + NatDis) %>%
   select(-c(CollectVio, NatDis))
 
-# data portal order
+# CODs in data portal order
 v_cod_dp <- c("Diarrhoeal", "HIV",  "LRI", "Malaria", 
               "Maternal", "Measles" , "TB", "OtherCMPN", "Cardiovascular",
               "Congenital", "Digestive" ,  "Neoplasms" , "OtherNCD",
@@ -325,8 +333,8 @@ col3 <- brewer.pal(7, 'Blues')[2:7]
 colPalette <- c(col1, col2, col3)
 names(colPalette) <- v_cod_lab_dp
 
-
-p <- plotDat  %>%
+# uneven legend rows
+p_main <- plotDat  %>%
   pivot_longer(
     cols = v_cod_dp,
     names_to = "COD",
@@ -352,12 +360,380 @@ p <- plotDat  %>%
   facet_wrap(~Variable, scales = "free_x") +
   coord_flip() +
   theme_minimal() +
-  theme(text = element_text(size = 12),
+  theme(text = element_text(size = 14), panel.grid.major.y = element_blank(),
         legend.position = "bottom", legend.title = element_blank()) +
   labs(title = "", x= "", y = "") +
-  guides(fill = guide_legend(nrow = 3, byrow = TRUE, reverse = TRUE))
+  guides(fill = "none") 
+legend_order <- plotDat  %>%
+  pivot_longer(
+    cols = v_cod_dp,
+    names_to = "COD",
+    values_to = "CSMF"
+  ) %>%
+  mutate(COD = factor(COD, levels = rev(v_cod_dp), labels = rev(v_cod_lab_dp))) %>%
+  select(COD) %>% pull()
+causes_1 <- legend_order[1:8]
+causes_2 <- legend_order[9:13]
+causes_3 <- legend_order[14:18]
+make_leg <- function(items, colorlow, colorhigh) {
+  df <- data.frame(COD = factor(items, levels = items))
+  
+  ggplot(df, aes(x = COD, y = 1, fill = COD)) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = colPalette[colorlow:colorhigh], breaks = items) +
+    guides(fill = guide_legend(nrow = 1, byrow = TRUE, title = NULL)) +
+    theme_void() +
+    theme(legend.position = "bottom", text = element_text(size = 14))
+}
+leg1 <- cowplot::get_legend(make_leg(causes_1, 1, 8))
+leg2 <- cowplot::get_legend(make_leg(causes_2, 9, 13))
+leg3 <- cowplot::get_legend(make_leg(causes_3, 14, 18))
+all_legs <- cowplot::plot_grid(
+  leg1,
+  leg2,
+  leg3,
+  ncol = 1,
+  rel_heights = c(1,1,1)
+)
+p_final <- cowplot::plot_grid(
+  p_main + guides(fill = "none"),
+  all_legs,
+  ncol = 1,
+  rel_heights = c(1, 0.3)
+)
+p_final
+ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024_v2.png", sep=""), p_final, dpi = 500, height = 6, width = 12, units = "in")
 
-ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024_v2.png", sep=""), p, dpi = 500, height = 6, width = 12, units = "in")
+
+# Figure 2: with annotations ---------------------------------------------
+
+# CODs in data portal order
+v_cod_dp <- c("Diarrhoeal", "HIV",  "LRI", "Malaria", 
+              "Maternal", "Measles" , "TB", "OtherCMPN", "Cardiovascular",
+              "Congenital", "Digestive" ,  "Neoplasms" , "OtherNCD",
+              "Drowning" , "RTI",  "SelfHarm" , "InterpVio" ,
+              "ColVioNatDis", "OtherInj")
+v_cod_lab_dp <- c('Diarrhea', 'HIV/AIDS', 'Lower respiratory\ninfections', 'Malaria',
+                  'Maternal causes', 'Measles', 'Tuberculosis', 'Other communicable\ndiseases', 
+                  'Cardiovascular', 'Congenital anomalies', 'Digestive system', 
+                  'Neoplasms/cancer', 'Other NCDs',
+                  'Drowning', 'Road traffic injuries', 'Self-harm', 
+                  'Interpersonal violence', 'Collective violence and\nnatural disasters',
+                  'Other injuries')
+
+# Color palette 1: Communicable diseases of all ages
+col1 <- brewer.pal(9, 'Oranges')[3:9]
+col1 <- c(col1[1:4], 'plum1', col1[5:length(col1)])
+
+# Color palette 2: Non-communicable diseases
+col2 <- brewer.pal(6, 'Greens')[2:6]
+
+# Color palette 4: Injuries
+col3 <- brewer.pal(7, 'Blues')[2:7]
+
+# Full palette
+colPalette <- c(col1, col2, col3)
+names(colPalette) <- v_cod_lab_dp
+
+plotDat1 <- aggReg5to19 %>%
+  mutate(ColVioNatDis = CollectVio + NatDis) %>%
+  select(-c(CollectVio, NatDis))
+
+plotDat2 <- aggReg5to19 %>%
+  mutate(ColVioNatDis = CollectVio + NatDis) %>%
+  select(-c(CollectVio, NatDis)) %>%
+  pivot_longer(
+    cols = v_cod_dp,
+    names_to = "COD",
+    values_to = "CSMF"
+  ) %>%
+  mutate(COD = factor(COD, levels = rev(v_cod_dp), labels = rev(v_cod_lab_dp)),
+         Region = factor(Region, levels = v_reg_dths, v_reg_lab)) %>%
+  filter(Region != "World") %>%
+  rename(env = Deaths) %>%
+  mutate(Deaths = CSMF*env) %>%
+  mutate(CSMF = CSMF * 100) %>%
+  pivot_longer(
+    cols = c(Deaths, CSMF),
+    names_to = "Variable",
+    values_to = "Value"
+  ) %>%
+  mutate(Variable = ifelse(Variable == "CSMF", "Mortality fractions (%)", "Number of deaths")) %>%
+  filter(Year == 2024)
+totals <-  plotDat2 %>%
+  filter(Variable == "Number of deaths") %>%
+  group_by(Region) %>%
+  summarise(Total = sum(Value), .groups = "drop") %>%
+  mutate(Variable = "Number of deaths") 
+prob_region <- "West and\ncentral Africa"
+prob_total <- totals %>% 
+  filter(Region == prob_region)
+anno_df <- totals %>%
+  filter(Region == prob_region) %>%
+  mutate(
+    y_pos = Total, 
+    label = scales::comma(round(Total, 0)),
+    Variable = "Number of deaths"
+  )
+totals <- totals %>%
+  filter(Region != "West and\ncentral Africa" )
+
+p_main <- ggplot(plotDat2) +
+  geom_bar(aes(x = Region, y = Value, fill = COD),
+           stat = "identity", position = "stack") +
+  geom_text(
+    data = totals,
+    aes(
+      x = Region,
+      y = Total,
+      label = scales::comma(round(Total, 0))
+    ),
+    hjust = -0.1, 
+    size = 4
+  ) +
+  geom_segment(
+    data = prob_total,
+    aes(x = 3.8, xend = 1.6, 
+        y = prob_total %>% select(Total) %>% pull() * .98, 
+        yend = prob_total %>% select(Total) %>% pull() * .98),
+    #arrow = arrow(length = unit(0.15, "cm")),
+    linewidth = 0.4
+  ) +
+  geom_text(
+    data = anno_df,
+    aes(
+      x = 4,
+      y = y_pos,
+      label = label
+    ),
+    size = 4,
+    hjust = 1
+  ) +
+  scale_fill_manual(values = colPalette) +
+  scale_y_continuous(labels = label_comma()) + #, expand = expansion(mult = c(0, 0.1))) +
+  facet_wrap(~Variable, scales = "free_x") +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 14),
+    panel.grid.major.y = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    plot.margin = margin(t = -10, r = 10, b = 0, l = 10)  
+  ) +
+  labs(title = "", x = "", y = "") +
+  guides(fill = "none")
+
+
+legend_order <- plotDat1  %>%
+  pivot_longer(
+    cols = v_cod_dp,
+    names_to = "COD",
+    values_to = "CSMF"
+  ) %>%
+  mutate(COD = factor(COD, levels = rev(v_cod_dp), labels = rev(v_cod_lab_dp))) %>%
+  select(COD) %>% pull()
+causes_1 <- legend_order[1:8]
+causes_2 <- legend_order[9:13]
+causes_3 <- legend_order[14:18]
+make_leg <- function(items, colorlow, colorhigh) {
+  df <- data.frame(COD = factor(items, levels = items))
+  
+  ggplot(df, aes(x = COD, y = 1, fill = COD)) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = colPalette[colorlow:colorhigh], breaks = items) +
+    guides(fill = guide_legend(nrow = 1, byrow = TRUE, title = NULL)) +
+    theme_void() +
+    theme(legend.position = "bottom", text = element_text(size = 14),
+          plot.margin = margin(t = -10, r = 10, b = -10, l = 10)  )
+}
+leg1 <- cowplot::get_legend(make_leg(causes_1, 1, 8))
+leg2 <- cowplot::get_legend(make_leg(causes_2, 9, 13))
+leg3 <- cowplot::get_legend(make_leg(causes_3, 14, 18))
+all_legs <- cowplot::plot_grid(
+  leg1,
+  leg2,
+  leg3,
+  ncol = 1,
+  rel_heights = c(1,1,1)
+)
+p_final <- cowplot::plot_grid(
+  p_main + guides(fill = "none"),
+  all_legs,
+  ncol = 1,
+  rel_heights = c(1, 0.3)
+)
+p_final
+
+ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024_v4.png", sep=""), p_final, dpi = 500, height = 6, width = 10, units = "in")
+
+# Figure 2: final ---------------------------------------------
+
+# CODs in data portal order
+v_cod_dp <- c("Diarrhoeal", "HIV",  "LRI", "Malaria", 
+              "Maternal", "Measles" , "TB", "OtherCMPN", "Cardiovascular",
+              "Congenital", "Digestive" ,  "Neoplasms" , "OtherNCD",
+              "Drowning" , "RTI",  "SelfHarm" , "InterpVio" ,
+              "CollectVio", "NatDis", "OtherInj")
+
+v_cod_lab_dp <- c('Diarrhea', 'HIV/AIDS', 'Lower respiratory\ninfections', 'Malaria',
+                  'Maternal causes', 'Measles', 'Tuberculosis', 'Other communicable\ndiseases', 
+                  'Cardiovascular', 'Congenital anomalies', 'Digestive system', 
+                  'Neoplasms/cancer', 'Other NCDs',
+                  'Drowning', 'Road traffic injuries', 'Self-harm', 'Interpersonal violence', 
+                  'Collective violence', 'Natural disasters', 'Other injuries')
+
+# Color palette 1: Communicable diseases of all ages
+col1 <- brewer.pal(9, 'Oranges')[3:9]
+col1 <- c(col1[1:4], 'plum1', col1[5:length(col1)])
+
+# Color palette 2: Non-communicable diseases
+col2 <- brewer.pal(6, 'Greens')[2:6]
+
+# Color palette 4: Injuries
+col3 <- brewer.pal(6, 'Blues')[2:6]
+col3 <- c(col3[1:4], grey(.7), grey(.4), col3[length(col3)])
+
+# Full palette
+colPalette <- c(col1, col2, col3)
+names(colPalette) <- v_cod_lab_dp
+
+# Test
+par(las = 1, mar = rep(1, 4))
+plot(1:length(colPalette), pch = 19, cex = 2,
+     col = colPalette, 
+     xaxt = 'n', yaxt = 'n')
+text(x = 1:length(colPalette),
+     y = 1:length(colPalette),
+     labels = names(colPalette), cex = 0.5)
+
+plotDat <- aggReg5to19 %>%
+  pivot_longer(
+    cols = v_cod_dp,
+    names_to = "COD",
+    values_to = "CSMF"
+  ) %>%
+  mutate(COD = factor(COD, levels = rev(v_cod_dp), labels = rev(v_cod_lab_dp)),
+         Region = factor(Region, levels = v_reg_dths, v_reg_lab)) %>%
+  filter(Region != "World") %>%
+  rename(env = Deaths) %>%
+  mutate(Deaths = CSMF*env) %>%
+  mutate(CSMF = CSMF * 100) %>%
+  pivot_longer(
+    cols = c(Deaths, CSMF),
+    names_to = "Variable",
+    values_to = "Value"
+  ) %>%
+  mutate(Variable = ifelse(Variable == "CSMF", "Mortality fractions (%)", "Number of deaths")) %>%
+  filter(Year == 2024)
+totals <-  plotDat %>%
+  filter(Variable == "Number of deaths") %>%
+  group_by(Region) %>%
+  summarise(Total = sum(Value), .groups = "drop") %>%
+  mutate(Variable = "Number of deaths") 
+prob_region <- "West and\ncentral Africa"
+prob_total <- totals %>% 
+  filter(Region == prob_region)
+anno_df <- totals %>%
+  filter(Region == prob_region) %>%
+  mutate(
+    y_pos = Total, 
+    label = scales::comma(round(Total, 0)),
+    Variable = "Number of deaths"
+  )
+totals <- totals %>%
+  filter(Region != "West and\ncentral Africa" )
+
+p_main <- ggplot(plotDat) +
+  geom_bar(aes(x = Region, y = Value, fill = COD),
+           stat = "identity", position = "stack") +
+  geom_text(
+    data = totals,
+    aes(
+      x = Region,
+      y = Total,
+      label = scales::comma(round(Total, 0))
+    ),
+    hjust = -0.1, 
+    size = 4
+  ) +
+  geom_segment(
+    data = prob_total,
+    aes(x = 3.8, xend = 1.6, 
+        y = prob_total %>% select(Total) %>% pull() * .98, 
+        yend = prob_total %>% select(Total) %>% pull() * .98),
+    #arrow = arrow(length = unit(0.15, "cm")),
+    linewidth = 0.4
+  ) +
+  geom_text(
+    data = anno_df,
+    aes(
+      x = 4,
+      y = y_pos,
+      label = label
+    ),
+    size = 4,
+    hjust = 1
+  ) +
+  scale_fill_manual(values = colPalette) +
+  scale_y_continuous(labels = label_comma()) + #, expand = expansion(mult = c(0, 0.1))) +
+  facet_wrap(~Variable, scales = "free_x") +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 14),
+    panel.grid.major.y = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    plot.margin = margin(t = -10, r = 10, b = 0, l = 10)  
+  ) +
+  labs(title = "", x = "", y = "") +
+  guides(fill = "none")
+p_main
+
+legend_order <- aggReg5to19 %>%
+  pivot_longer(
+    cols = v_cod_dp,
+    names_to = "COD",
+    values_to = "CSMF"
+  ) %>%
+  mutate(COD = factor(COD, levels = rev(v_cod_dp), labels = rev(v_cod_lab_dp))) %>%
+  select(COD) %>% pull() %>% unique()
+causes_1 <- legend_order[1:8]
+causes_2 <- legend_order[9:13]
+causes_3 <- legend_order[14:20]
+make_leg <- function(items, colorlow, colorhigh) {
+  df <- data.frame(COD = factor(items, levels = items))
+  
+  ggplot(df, aes(x = COD, y = 1, fill = COD)) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = colPalette[colorlow:colorhigh], breaks = items) +
+    guides(fill = guide_legend(nrow = 1, byrow = TRUE, title = NULL)) +
+    theme_void() +
+    theme(legend.position = "bottom", text = element_text(size = 13),
+          plot.margin = margin(t = -10, r = 10, b = -10, l = 10)  )
+}
+leg1 <- cowplot::get_legend(make_leg(causes_1, 1, 8))
+leg2 <- cowplot::get_legend(make_leg(causes_2, 9, 13))
+leg3 <- cowplot::get_legend(make_leg(causes_3, 14, 20))
+all_legs <- cowplot::plot_grid(
+  leg1,
+  leg2,
+  leg3,
+  ncol = 1,
+  rel_heights = c(1,1,1)
+)
+p_final <- cowplot::plot_grid(
+  p_main + guides(fill = "none"),
+  all_legs,
+  ncol = 1,
+  rel_heights = c(1, 0.3)
+)
+p_final
+
+ggsave(paste("./gen/visualizations/output/csmf_deaths_reg_05to19_2024_v5.png", sep=""), p_final, dpi = 500, height = 6, width = 10, units = "in")
+
+
 
 # Figure 2 interpretation -------------------------------------------------
 
@@ -956,7 +1332,7 @@ ggsave("./gen/visualizations/output/aar2.png", aar2, width = 8, height = 10, dpi
 
 
 
-# Figure 4 interpretation -------------------------------------------------
+# Figure 4: interpretation -------------------------------------------------
 
 # aarrs
 v_reg_dths
@@ -999,21 +1375,49 @@ plotdat1 %>%
 
 # Updated to only display the 6 defined causes (excluding Other..., collective violence and nat disasters) with the highest AARR in MDG or SDG era per region
 
-# set cod color palette
-mycols <- hue_pal()(length(v_cod))
-cod_colors <- setNames(mycols, v_cod_lab)
+# # set cod color palette
+# mycols <- hue_pal()(length(v_cod))
+# cod_colors <- setNames(mycols, v_cod_lab)
+# # set cod labels from data portal
+# v_cod_lab <- c("Maternal causes", 
+#                "Measles", "HIV/AIDS", 
+#                "Lower respiratory\ninfections", 
+#                "Tuberculosis", "Diarrhoea", "Malaria", 
+#                "Other communicable diseases",
+#                "Congenital anomalies", "Cardiovascular", "Digestive system", 
+#                "Cancer", "Other non-communicable diseases", 
+#                "Interpersonal violence", "Self harm",
+#                "Drowning", "Road traffic injuries", "Other injuries", 
+#                "Natural and unnatural disasters", "Collective violence")
 
-# set cod labels from data portal
-v_cod_lab <- c("Maternal causes", 
-               "Measles", "HIV/AIDS", 
-               "Lower respiratory\ninfections", 
-               "Tuberculosis", "Diarrhoea", "Malaria", 
-               "Other communicable diseases",
-               "Congenital anomalies", "Cardiovascular", "Digestive system", 
-               "Cancer", "Other non-communicable diseases", 
-               "Interpersonal violence", "Self harm",
-               "Drowning", "Road traffic injuries", "Other injuries", 
-               "Natural and unnatural disasters", "Collective violence")
+
+# CODs in data portal order
+v_cod_dp <- c("Diarrhoeal", "HIV",  "LRI", "Malaria", 
+              "Maternal", "Measles" , "TB", "OtherCMPN", "Cardiovascular",
+              "Congenital", "Digestive" ,  "Neoplasms" , "OtherNCD",
+              "Drowning" , "RTI",  "SelfHarm" , "InterpVio" ,
+              "ColVioNatDis", "OtherInj")
+v_cod_lab_dp <- c('Diarrhea', 'HIV/AIDS', 'Lower respiratory\ninfections', 'Malaria',
+                  'Maternal causes', 'Measles', 'Tuberculosis', 'Other communicable\ndiseases', 
+                  'Cardiovascular', 'Congenital anomalies', 'Digestive system', 
+                  'Neoplasms/cancer', 'Other NCDs',
+                  'Drowning', 'Road traffic njuries', 'Self-harm', 
+                  'Interpersonal violence', 'Collective violence and\nnatural disasters',
+                  'Other injuries')
+
+# Color palette 1: Communicable diseases of all ages
+col1 <- brewer.pal(9, 'Oranges')[3:9]
+col1 <- c(col1[1:4], 'plum1', col1[5:length(col1)])
+
+# Color palette 2: Non-communicable diseases
+col2 <- brewer.pal(6, 'Greens')[2:6]
+
+# Color palette 4: Injuries
+col3 <- brewer.pal(7, 'Blues')[2:7]
+
+# Full palette
+colPalette <- c(col1, col2, col3)
+names(colPalette) <- v_cod_lab_dp
 
 # prepare data for aarr calculation
 aarrDat <- aggReg5to19 %>%
@@ -1022,19 +1426,19 @@ aarrDat <- aggReg5to19 %>%
     names_to = "COD",
     values_to = "CSMF"
   ) %>%
-  mutate(
-    CODfac = factor(COD, levels = v_cod, labels = v_cod_lab),
-    Region = factor(Region, levels = v_reg_dths)
-  ) %>%
   filter(!(COD %in% c("NatDis", "CollectVio", "OtherCMPN", "OtherNCD", "OtherInj"))) %>%
+  mutate(
+    CODfac = factor(COD, levels = v_cod_dp, labels = v_cod_lab_dp),
+    Region = factor(Region, levels = v_reg_dths, labels = v_reg_lab_nobreaks)
+  ) %>%
   select(-COD) %>%
   rename(COD = CODfac) %>%
   mutate(CSMR = CSMF * Rate,
-         period = ifelse(Year %in% 2000:2015, "2000-2015", "2015-2024"))
+         period = ifelse(Year %in% 2000:2015, "2000-2015", "2016-2024"))
 # include 2015 in both periods
 aarrDat <- aarrDat %>%
-  bind_rows(aarrDat %>% filter(Year == 2015) %>% mutate(period = "2015-2024")) %>%
-  mutate(period = factor(period, levels = c("2000-2015", "2015-2024"))) %>%
+  bind_rows(aarrDat %>% filter(Year == 2015) %>% mutate(period = "2016-2024")) %>%
+  mutate(period = factor(period, levels = c("2000-2015", "2016-2024"))) %>%
   arrange(Region, COD, Year) %>%
   group_by(Region, COD) %>%
   mutate(lagCSMR = lag(CSMR),
@@ -1042,9 +1446,9 @@ aarrDat <- aarrDat %>%
   group_by(Region, COD, period) %>%
   summarise(AARR = mean(RR, na.rm = TRUE)) %>%
   mutate(AARR1 = ifelse(period == "2000-2015", AARR, NA),
-         AARR2 = ifelse(period == "2015-2024", AARR, NA),
+         AARR2 = ifelse(period == "2016-2024", AARR, NA),
          AARR2 = max(AARR2, na.rm = TRUE),
-         AARR2 = ifelse(period == "2015-2024", NA, AARR2)) 
+         AARR2 = ifelse(period == "2016-2024", NA, AARR2)) 
 # only keep top 6 aarr by cause, by region
 aarrDat <- aarrDat %>%
   group_by(Region) %>%
@@ -1064,9 +1468,10 @@ csmrDat <- aggReg5to19 %>%
     names_to = "COD",
     values_to = "CSMF"
   ) %>%
+  filter(!(COD %in% c("NatDis", "CollectVio", "OtherCMPN", "OtherNCD", "OtherInj"))) %>%
   mutate(
-    COD = factor(COD, levels = v_cod, labels = v_cod_lab),
-    Region = factor(Region, levels = v_reg_dths)
+    COD = factor(COD, levels = v_cod_dp, labels = v_cod_lab_dp),
+    Region = factor(Region, levels = v_reg_dths, labels = v_reg_lab_nobreaks)
   ) %>%
   mutate(CSMR = CSMF * Rate) %>%
   inner_join(aarrDat %>% select(Region, COD) %>% distinct(), by = c("Region", "COD"))
@@ -1094,7 +1499,7 @@ fn_plotCSMR <- function(DAT, REGION, YLIMIT, XLAB){
     geom_line(aes(x = Year, y = CSMR, color = COD)) +
     geom_vline(aes(xintercept = 2015)) +
     labs(x = XLAB, y = "") +
-    scale_color_manual(values = cod_colors) +
+    scale_color_manual(values = colPalette) +
     scale_x_continuous(breaks = c(2000, 2005, 2010, 2015, 2020, 2024)) +
     scale_y_continuous(breaks = ybreaks) +
     theme(legend.position = "none", plot.margin = margin(0, 0, 0, 1)) +
@@ -1109,7 +1514,7 @@ fn_plotAARR <- function(DAT, REGION, XLOW, XHIGH, XLAB){
   
   v_cod_order <- DAT %>%
     filter(Region == REGION) %>%
-    filter(Year == 2024) %>%
+    filter(Year == 2000) %>%
     arrange(CSMR) %>%
     select(COD) %>% pull()
   
@@ -1127,19 +1532,22 @@ fn_plotAARR <- function(DAT, REGION, XLOW, XHIGH, XLAB){
     xbreaks <- xbreaks[xbreaks <= XHIGH]
     xbreaks
   }
+  XLOW <- XLOW * 100 
+  XHIGH <- XHIGH * 100
+  xbreaks <- xbreaks * 100
   
   plot <- aarrDat %>%
     filter(Region == REGION) %>%
     mutate(COD = factor(COD, levels = v_cod_order)) %>%
     ggplot() +
-    geom_point(aes(x = COD, y = AARR, shape = period, color = COD)) +
-    geom_segment(aes(x = COD, xend = COD, y = AARR1, yend = AARR2, color = COD), 
+    geom_point(aes(x = COD, y = AARR*100, shape = period, color = COD)) +
+    geom_segment(aes(x = COD, xend = COD, y = AARR1*100, yend = AARR2*100, color = COD), 
                  arrow = arrow(length = unit(0.1, "cm"), type = "closed"),
                  show.legend = FALSE) +
     geom_hline(aes(yintercept = 0)) +
-    labs(x = "", y = XLAB)+
+    labs(x = "", y = XLAB) +
     scale_shape_manual(values = c(16, NA)) +
-    scale_color_manual(values = cod_colors) +
+    scale_color_manual(values = colPalette) +
     scale_y_continuous(limits = c(XLOW, XHIGH), breaks = xbreaks) +
     guides(shape  = "none", color = "none") +
     theme(plot.margin = margin(0, 0, 0, 0)) +
@@ -1149,26 +1557,26 @@ fn_plotAARR <- function(DAT, REGION, XLOW, XHIGH, XLAB){
 }
 
 # create each region plot
-p1a <- fn_plotCSMR(csmrDat, v_reg_dths[2], YLIMIT = 10, XLAB = "")
-p1b <- fn_plotAARR(csmrDat, v_reg_dths[2], XLOW = -0.01, XHIGH = 0.45, XLAB = "")
-p1 <- p1a + p1b + plot_annotation(subtitle = v_reg_dths[2])
+p1a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[2], YLIMIT = 10, XLAB = "")
+p1b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[2], XLOW = -0.01, XHIGH = 0.45, XLAB = "")
+p1 <- p1a + p1b + plot_annotation(subtitle = v_reg_lab_nobreaks[2])
 
-p2a <- fn_plotCSMR(csmrDat, v_reg_dths[3], YLIMIT = 10, XLAB = "")
-p2b <- fn_plotAARR(csmrDat, v_reg_dths[3], XLOW = -0.01, XHIGH = 0.45, XLAB = "")
-p2 <- p2a + p2b + plot_annotation(subtitle = v_reg_dths[3])
+p2a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[3], YLIMIT = 10, XLAB = "")
+p2b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[3], XLOW = -0.01, XHIGH = 0.45, XLAB = "")
+p2 <- p2a + p2b + plot_annotation(subtitle = v_reg_lab_nobreaks[3])
 
-p3a <- fn_plotCSMR(csmrDat, v_reg_dths[4], YLIMIT = 5, XLAB = "")
-p3b <- fn_plotAARR(csmrDat, v_reg_dths[4], XLOW = -0.01, XHIGH = 0.45, XLAB = "")
-p3 <- p3a + p3b + plot_annotation(subtitle = v_reg_dths[3])
+p3a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[4], YLIMIT = 5, XLAB = "")
+p3b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[4], XLOW = -0.01, XHIGH = 0.45, XLAB = "")
+p3 <- p3a + p3b + plot_annotation(subtitle = v_reg_lab_nobreaks[4])
 
-p4a <- fn_plotCSMR(csmrDat, v_reg_dths[4], YLIMIT = 5, XLAB = "Year")
-p4b <- fn_plotAARR(csmrDat, v_reg_dths[4], XLOW = -0.01, XHIGH = 0.45, XLAB = "AARR")
-p4 <- p4a + p4b + plot_annotation(subtitle = v_reg_dths[3])
+p4a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[5], YLIMIT = 5, XLAB = "Year")
+p4b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[5], XLOW = -0.01, XHIGH = 0.45, XLAB = "Average annual rate of reduction (%)")
+p4 <- p4a + p4b + plot_annotation(subtitle = v_reg_lab_nobreaks[5])
 
 # add legend to bottom of lowest plot
 dummy_plot <- ggplot() +
   dummy_guide(
-    labels = c("2000–2015", "2015–2024"),
+    labels = c("2000–15", "2016–24"),
     shape  = c(16, 17),
     title = "Period"
   ) +
@@ -1186,8 +1594,8 @@ aarr1 <- (wrap_elements(p1) / wrap_elements(p2) / wrap_elements(p3) /  wrap_elem
 # add a y-axis label to the left side
 add_y_label <- ggplot() +
   theme_void() +
-  annotate("text", x = 0.5, y = 0.5, label = "Deaths per 1,000 population",
-           angle = 90, size = 3.5, hjust = 0.5)
+  annotate("text", x = 0.5, y = 0.5, label = "Deaths per 1000 population",
+           angle = 90, size = 4.25, hjust = 0.5) # WAS 3.5
 aarr1_labeled <- add_y_label + aarr1 + plot_layout(widths = c(0.05, 1))
 
 aarr1_labeled 
@@ -1199,30 +1607,30 @@ ggsave( "./gen/visualizations/output/aar1-abbrev.png", aarr1_labeled, width = 8,
 # Appendix Figure: aarr low burden ----------------------------------------
 
 # create each region plot
-p1a <- fn_plotCSMR(csmrDat, v_reg_dths[5], YLIMIT = 2, XLAB = "")
-p1b <- fn_plotAARR(csmrDat, v_reg_dths[5], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
-p1 <- p1a + p1b + plot_annotation(subtitle = v_reg_dths[5])
+p1a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[6], YLIMIT = 2, XLAB = "")
+p1b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[6], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
+p1 <- p1a + p1b + plot_annotation(subtitle = v_reg_lab_nobreaks[6])
 
-p2a <- fn_plotCSMR(csmrDat, v_reg_dths[6], YLIMIT = 2, XLAB = "")
-p2b <- fn_plotAARR(csmrDat, v_reg_dths[6], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
-p2 <- p2a + p2b + plot_annotation(subtitle = v_reg_dths[6])
+p2a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[7], YLIMIT = 2, XLAB = "")
+p2b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[7], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
+p2 <- p2a + p2b + plot_annotation(subtitle = v_reg_lab_nobreaks[7])
 
-p3a <- fn_plotCSMR(csmrDat, v_reg_dths[7], YLIMIT = 2, XLAB = "")
-p3b <- fn_plotAARR(csmrDat, v_reg_dths[7], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
-p3 <- p3a + p3b + plot_annotation(subtitle = v_reg_dths[7])
+p3a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[8], YLIMIT = 2, XLAB = "")
+p3b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[8], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
+p3 <- p3a + p3b + plot_annotation(subtitle = v_reg_lab_nobreaks[8])
 
-p4a <- fn_plotCSMR(csmrDat, v_reg_dths[8], YLIMIT = 2, XLAB = "")
-p4b <- fn_plotAARR(csmrDat, v_reg_dths[8], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
-p4 <- p4a + p4b + plot_annotation(subtitle = v_reg_dths[8])
+p4a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[9], YLIMIT = 2, XLAB = "")
+p4b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[9], XLOW = -0.02, XHIGH = 0.07, XLAB = "")
+p4 <- p4a + p4b + plot_annotation(subtitle = v_reg_lab_nobreaks[9])
 
-p5a <- fn_plotCSMR(csmrDat, v_reg_dths[9], YLIMIT = 2, XLAB = "Year")
-p5b <- fn_plotAARR(csmrDat, v_reg_dths[9], XLOW = -0.02, XHIGH = 0.07, XLAB = "AARR")
-p5 <- p5a + p5b + plot_annotation(subtitle = v_reg_dths[9])
+p5a <- fn_plotCSMR(csmrDat, v_reg_lab_nobreaks[10], YLIMIT = 2, XLAB = "Year")
+p5b <- fn_plotAARR(csmrDat, v_reg_lab_nobreaks[10], XLOW = -0.02, XHIGH = 0.07, XLAB = "Average annual rate of reduction (%)")
+p5 <- p5a + p5b + plot_annotation(subtitle = v_reg_lab_nobreaks[10])
 
 # add legend to bottom of lowest plot
 dummy_plot <- ggplot() +
   dummy_guide(
-    labels = c("2000–2015", "2015–2024"),
+    labels = c("2000–2015", "2016–2024"),
     shape  = c(16, 17),
     title = "Period"
   ) +
@@ -1230,7 +1638,7 @@ dummy_plot <- ggplot() +
   theme(legend.position = "bottom", legend.box = "horizontal", legend.direction = "horizontal",
         plot.margin = margin(0, 0, 0, 0))
 
-p5 <- p5  / dummy_plot + plot_layout(heights = c(1, 0.1)) + plot_annotation(subtitle = v_reg_dths[9])
+p5 <- p5  / dummy_plot + plot_layout(heights = c(1, 0.1)) + plot_annotation(subtitle = v_reg_dths[10])
 
 # combine all plots together
 aarr2 <- (wrap_elements(p1) / wrap_elements(p2) / wrap_elements(p3) /  wrap_elements(p4) /  wrap_elements(p5)) +
@@ -1241,7 +1649,7 @@ aarr2 <- (wrap_elements(p1) / wrap_elements(p2) / wrap_elements(p3) /  wrap_elem
 add_y_label <- ggplot() +
   theme_void() +
   annotate("text", x = 0.5, y = 0.5, label = "Deaths per 1,000 population",
-           angle = 90, size = 3.5, hjust = 0.5)
+           angle = 90, size = 4.25, hjust = 0.5)
 aarr2_labeled <- add_y_label + aarr2 + plot_layout(widths = c(0.05, 1))
 
 aarr2_labeled 
