@@ -3,7 +3,7 @@
 #' @return Strings, booleans, integers, date defined below
 ################################################################################
 
-## Choose age/sex group ## FORMERLY LABEL ageGroup
+## Choose age/sex group
 #ageSexSuffix <- "05to09y"
 #ageSexSuffix <- "10to14y"
 #ageSexSuffix <- "15to19yF"
