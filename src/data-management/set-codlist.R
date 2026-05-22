@@ -1,6 +1,6 @@
 ################################################################################
 #' @description Set list of modeled and reported CODs for each age group
-#' @return 
+#' @return Data frame with age-sex specific CODs
 ################################################################################
 #' Clear environment
 rm(list = ls())

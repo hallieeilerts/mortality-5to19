@@ -9,8 +9,6 @@ rm(list = ls())
 source("./src/prepare-session/set-inputs.R")
 ################################################################################
 
-# See file 'Code/20201023_ReadTBdata.R'
-
 # Minimum fraction of Other CD
 if(ageSexSuffix == "05to09y"){frac_cd <- 0.0455}
 if(ageSexSuffix == "10to14y"){frac_cd <- 0.0332}

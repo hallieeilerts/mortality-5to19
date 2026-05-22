@@ -1,6 +1,6 @@
 ################################################################################
 #' @description Set standard columns for age sex groups
-#' @return 
+#' @return Data frame with age-sex group names
 ################################################################################
 #' Clear environment
 rm(list = ls())
@@ -9,7 +9,7 @@ rm(list = ls())
 source("./src/prepare-session/set-inputs.R")
 dat_filename <- list.files("./data/keys")
 dat_filename <- dat_filename[grepl("agesexgroups", dat_filename, ignore.case = TRUE)]
-dat_filename <- tail(sort(dat_filename),1) # Most recent
+dat_filename <- tail(sort(dat_filename),1)
 key_agesexgrp  <- read.csv(paste0("./data/keys/", dat_filename, sep = ""))
 ################################################################################
 

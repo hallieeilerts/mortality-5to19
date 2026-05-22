@@ -1,24 +1,16 @@
-################################################ #
-####
-####   Predictions with an array of coefficients from f.par()
-####   
 fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
   
-  ## PA   object produced with function f.par()
-  ## NPD  Name of data set with covariates to be used in the prediction
-  ## MODEL HMM or LMM
-  ## ID   variable in NPD that uniquely identify observations
-  ## PE   Period label ("early","late","any")
-  ## PLW  distinguishes between preterm and low birth weight as COD (1/0)
-  
-  # # testing
-  # PA <- mod_mat_LMM
-  # NPD <- dat_pred
-  # MODEL <- "LMM"
-  # KEY_CTRYCLASS <- key_ctryclass
-  # ID <- "pid"
-  # PE <- "any"
-  # PLW <- 1
+  #' @title Prediction function
+  # 
+  #' @description Predictions with an array of coefficients from fn_par()
+  #
+  #' @param PA object produced with function fn_par()
+  #' @param NPD Name of data set with covariates to be used in the prediction
+  #' @param MODEL HMM or LMM
+  #' @param ID variable in NPD that uniquely identify observations
+  #' @param PE Period label ("early","late","any") (for under-5s)
+  #' @param PLW distinguishes between preterm and low birth weight as COD (1/0) (for under-5s)
+  #' @return Predicted fractions with fixed and fixed+random effects
   
   # Subset prediction data to high or low mortality countries
   v_ctries <- subset(KEY_CTRYCLASS, Group2010 %in% MODEL)$iso3
@@ -139,132 +131,3 @@ fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
 }
 
 
-
-# Previous version of function
-# Deprecated as of September 2, 2025
-
-# ################################################ #
-# ####
-# ####   Predictions with an array of coefficients from f.par()
-# ####   
-# fn_pr2 <- function(PA, NPD, MODEL, KEY_CTRYCLASS, ID="pid", PE="any", PLW=1){
-#   
-#   ## PA   object produced with function f.par()
-#   ## NPD  Name of data set with covariates to be used in the prediction
-#   ## MODEL HMM or LMM
-#   ## ID   variable in NPD that uniquely identify observations
-#   ## PE   Period label ("early","late","any")
-#   ## PLW  distinguishes between preterm and low birth weight as COD (1/0)
-#   
-#   # # testing
-#   # PA <- mod_mat_HMM
-#   # NPD <- dat_pred
-#   # MODEL <- "HMM"
-#   # KEY_CTRYCLASS <- key_ctryclass
-#   # ID <- "pid"
-#   # PE <- "any"
-#   # PLW <- 1
-# 
-#   # Subset prediction data to high or low mortality countries
-#   v_ctries <- subset(KEY_CTRYCLASS, Group2010 %in% MODEL)$iso3
-#   NPD <- subset(NPD, iso3 %in% v_ctries)
-#   
-#   ## This function makes predictions with fixed effects only and then adds 
-#   ## ONE random effect term selected at random among some candidates in RT in each MCMC iteration.
-#   # Prepare prediction data
-#   VXN <- names(PA$st.data$xmeans)  # vector of numerical covariates
-#   VXF <- dimnames(PA$BM)[[2]]  # vector of all covariates
-#   S   <- dim(NPD)[1]  # number of data points to predict
-#   K   <- length(VXF) # number of covariates including intercept
-#   H   <- length(VXN) # number of numerical covariates scaled
-#   C   <- dim(PA$BM)[3] # number of causes of death
-#   N   <- dim(PA$BM)[1] # number of simulations
-#   RISO <- dimnames(PA$RM)[[2]] # Countries with random effects in the model
-#   
-#   # Prepare raw variables dataset from prediction sample
-#   DX <- mutate(NPD, 
-#                #per.early=ifelse(PE=="early",1,0),
-#                #per.late=ifelse(PE=="late",1,0),
-#                #premvslbw=PLW
-#                ) %>%
-#     dplyr::select(all_of(c(ID, "iso3","year", VXF)))
-#   # Scale the numerical columns with means and SD from model
-#   DX[,VXN] <- scale(DX[,VXN], PA$st.data$xmeans, PA$st.data$xsd)
-#   
-#   # Edit for 5-19: Average random effects for India
-#   if("IND" %in% v_ctries){
-# 
-#     v_indst <- row.names(PA$RM[1,,])[grep("^I",row.names(PA$RM[1,,]))]
-#     v_indst <- v_indst[grepl("[a-z]", v_indst)] # retain those with lower case characters (Indian states)
-# 
-#     # RE for India states
-#     RM_ind <- PA$RM[, dimnames(PA$RM)[[2]] %in% c(v_indst, "IND"), ]
-# 
-#     # Subset India data points in studies
-#     df_studies_ind <- subset(PA$st.input$studies, reterm %in% c(v_indst, "IND"))[,c("recnr", "reterm")]
-#     # Subset their total deaths
-#     df_totdeaths <- subset(PA$st.input$deaths, recnr %in% df_studies_ind$recnr)[,c("recnr", "totdeaths")]
-#     df_totdeaths <- df_totdeaths[!duplicated(df_totdeaths),]
-#     # Merge total deaths onto studies
-#     df_studies_ind <- merge(df_studies_ind, df_totdeaths, by = "recnr")
-#     # Calculate distribution of deaths across national-level studies and states
-#     df_wt <- df_studies_ind %>%
-#       group_by(reterm) %>%
-#       summarise(dth = sum(totdeaths)) %>%
-#       ungroup() %>%
-#       mutate(total = sum(dth),
-#              wt = dth/total)
-# 
-#     # Ensure weights vector matches the state dimension of RM_ind
-#     v_wt <- df_wt$wt[ match(dimnames(RM_ind)[[2]], df_wt$reterm) ]
-# 
-#     # Multiply each state's values by its weight
-#     RM_ind_weighted <- sweep(RM_ind, 2, v_wt, FUN = "*")
-#     # Sum over states (dimension 2)
-#     RM_ind_sum <- apply(RM_ind_weighted, c(1, 3), sum)
-# 
-#     # Replace original IND in random effects array for prediction
-#     PA$RM[, dimnames(PA$RM)[[2]] %in% "IND", ] <- RM_ind_sum
-#   }
-# 
-#   # Edit for 5-19y: replace RE for countries that are in the RE matrix but not nationally representative
-#   # replace with random sample
-#   if(MODEL == "HMM"){
-#     
-#     v_natrep <- unique(subset(PA$st.input$studies, nationalrep == 1)$iso3)
-#     RE_replace <- dimnames(PA$RM)[[2]][!(dimnames(PA$RM)[[2]] %in% v_natrep)]
-#     if (length(RE_replace) > 0) {
-#       RX_replace <- array(rnorm(length(rep(c(PA$SM), length(RE_replace))), 0, 
-#                                 rep(c(PA$SM), length(RE_replace))), 
-#                           dim = c(dim(PA$SM), length(RE_replace)),
-#                           dimnames = list(dimnames(PA$SM)[[1]], dimnames(PA$SM)[[2]], RE_replace))
-#       RX_replace <- aperm(RX_replace, c(1, 3, 2))
-#       PA$RM[, RE_replace, ] <- RX_replace
-#     }
-#   }
-#   
-#   # Extend Random Effects Matrix to countries in prediction data (RX)
-#   REX <- unique(DX$iso3)
-#   # Identify countries in prediction data but not the estimated RE matrix
-#   REX <- REX[!(REX %in% dimnames(PA$RM)[[2]])]
-#   # Draw randomly simulated RE values for new countries, using the same SDs estimated from the model.
-#   RX <- array(rnorm(length(rep(c(PA$SM),length(REX))), 0, rep(c(PA$SM),length(REX))), 
-#               dim=c(dim(PA$SM), length(REX)),
-#               dimnames=list(dimnames(PA$SM)[[1]], dimnames(PA$SM)[[2]], REX))
-#   RX <- aperm(RX, c(1,3,2))
-#   # array combining random effect for in-sample and out-of-sample RE
-#   RT <- abind(PA$RM, RX, along = 2)
-#   
-#   # # Prepare matrix to store predictions
-#   LF <- array(NA, dim = c(N,S,C))  # matrix of fixed Predictions
-#   dimnames(LF) <- list(dimnames(PA$BM)[[1]], NPD[[ID]], dimnames(PA$BM)[[3]])
-#   LR <- LF  # matrix of random Predictions
-#   for (i in 1:N){
-#     LF[i,,] <- as.matrix(DX[,VXF]) %*% PA$BM[i,,] # logodds with fixed effects
-#     LR[i,,] <-  LF[i,,] + RT[i,match(NPD[["iso3"]], dimnames(RT)[[2]]),]
-#   }  
-#   PF <- aperm(apply(LF, c(1,2), function(x) exp(x)/sum(exp(x))), perm=c(2,3,1))
-#   PR <- aperm(apply(LR, c(1,2), function(x) exp(x)/sum(exp(x))), perm=c(2,3,1))
-#   # return:
-#   return(list(PF=PF, PR=PR, Prediction.Data=NPD, st.input=PA$st.input))
-# }

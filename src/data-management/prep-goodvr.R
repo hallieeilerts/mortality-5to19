@@ -1,6 +1,6 @@
 ################################################################################
 #' @description Formats cause-specific mortality fractions for good VR countries
-#' @return Data frame with VR CSMFs with updated variable names.
+#' @return Data frame with VR CSMFs with updated variable names
 ################################################################################
 #' Libraries
 library(readstata13)

@@ -6,12 +6,12 @@
 rm(list = ls())
 
 # Classification keys
-source("./src/data-management/set-regions.R",  local=new.env())
-source("./src/data-management/set-old-country-class.R",  local=new.env())
-source("./src/data-management/set-country-class.R",  local=new.env())
-source("./src/data-management/set-agesexgrp.R",  local=new.env())
-source("./src/data-management/set-cod-reclass.R",  local=new.env())
-source("./src/data-management/set-codlist.R",  local=new.env())
+source("./src/data-management/set-regions.R", local=new.env())
+source("./src/data-management/set-old-country-class.R", local=new.env())
+source("./src/data-management/set-country-class.R", local=new.env())
+source("./src/data-management/set-agesexgrp.R", local=new.env())
+source("./src/data-management/set-cod-reclass.R", local=new.env())
+source("./src/data-management/set-codlist.R", local=new.env())
 
 # Envelopes
 source("./src/data-management/prep-envelopes.R", local = new.env())
@@ -43,4 +43,5 @@ source("./src/data-management/envdraws-load.R", local=new.env())
 source("./src/data-management/envdraws-adjust-15to19.R", local=new.env())
 source("./src/data-management/envdraws-format.R", local=new.env())
 source("./src/data-management/envdraws-15to19-sexcombined.R", local=new.env())
+
 

@@ -1,6 +1,6 @@
 fn_createModInput <- function(AGESEXSUFFIX, MODEL, MOD_DAT, DAT_COVAR, DAT_COD, DAT_HP){
   
-  #' @title Call function for fn_e1() - model estimation
+  #' @title Call function for modelCACODE.stan
   # 
   #' @description Runs fn_e1 and saves fit
   #
@@ -12,14 +12,6 @@ fn_createModInput <- function(AGESEXSUFFIX, MODEL, MOD_DAT, DAT_COVAR, DAT_COD, 
   #' @param DAT_HP key with age/model-specific hyperparameters
   #' @return List with data for fitting model
   
-  # # testing
-  # AGESEXSUFFIX <- ageSexSuffix
-  # MODEL <- "LMM"
-  # MOD_DAT <-  mod_dat_LMM
-  # DAT_COVAR <- dat_covar
-  # DAT_COD <- dat_cod
-  # DAT_HP <- dat_hp
-
   # Model data
   studies <- MOD_DAT$studies
   deaths <- MOD_DAT$deaths
@@ -60,7 +52,7 @@ fn_createModInput <- function(AGESEXSUFFIX, MODEL, MOD_DAT, DAT_COVAR, DAT_COD, 
   }
   if(MODEL == "LMM"){
     studies <- studies %>%
-      dplyr::select(all_of(c("recnr", "iso3", "reterm", "first", "last", "intercept", vxc, vxn))) ### NOTE: IF NECESSARY, MAKE IT RETERM INSTEAD OF REID
+      dplyr::select(all_of(c("recnr", "iso3", "reterm", "first", "last", "intercept", vxc, vxn))) 
     # Number of non covariate/intercept columns
     vextra <- 5
   }
@@ -75,7 +67,7 @@ fn_createModInput <- function(AGESEXSUFFIX, MODEL, MOD_DAT, DAT_COVAR, DAT_COD, 
   
   # Create st.input object for stan (check the hyperparameters and other options..!!)
   st_input <- list(
-    model = stan_model(file='./src/estimation/cacode_DP.stan', auto_write = TRUE),
+    model = stan_model(file='./src/estimation/modelCACODE.stan', auto_write = TRUE),
     studies = studies,
     deaths = deaths,
     lambda = lam,   # lambda for lasso
@@ -123,22 +115,13 @@ fn_createModInput <- function(AGESEXSUFFIX, MODEL, MOD_DAT, DAT_COVAR, DAT_COD, 
     xmeans = apply(studies[,vxn], 2, mean, na.rm=T),
     xsd = apply(studies[,vxn], 2, sd, na.rm=T)
   )
-  # Hallie edit: add intercept column name to xmat. need to do because 5-19 has no vxc covariates and "intercept" column name is subsequently empty.
+
   colnames(st_data$Xmat) <- c("intercept", vxc, vxn)
   
   # Create model input
   mod_input <- list()
   mod_input[["ageSexSuffix"]] <- AGESEXSUFFIX
   mod_input[["model"]] <- MODEL
-  #mod_input[["deaths"]] <- deaths
-  #mod_input[["studies"]] <- studies
-  #mod_input[["vxc"]] <- vxc
-  #mod_input[["vxf"]] <- vxf
-  #mod_input[["vxn"]] <- vxn
-  #mod_input[["vdt"]] <- vdt
-  #mod_input[["refCat"]] <- refCat
-  #mod_input[["lam"]] <- lam
-  #mod_input[["resd"]] <- resd
   mod_input[["st_input"]] <- st_input
   mod_input[["st_data"]] <- st_data
 

@@ -1,6 +1,6 @@
 ################################################################################
 #' @description Updates variable names of China DSP data
-#' @return Data frame with China CSMFs with updated variable names.
+#' @return Data frame with China CSMFs with updated variable names
 ################################################################################
 #' Clear environment
 rm(list = ls())
@@ -59,17 +59,17 @@ for(i in 1:length(v_add)){
 
 # Alter reclassification key
 # Still necessary to reclassify CODs for China, but the CODs that get reclassified are slightly different due to different squeezing methods.
-# (Only HIV gets squeezed in, all other causes that are typically squeezed in should be left in the data)
+# (Only HIV gets squeezed in)
 
 # Identify which reported COD are not in the reclass column
-# (i.e., they are reclassified as an "other" cause in this column)
+# These COD are are reclassified as an "other" cause.
 v_cod_reported <- subset(key_codlist, ModeledOrReported == "Reported")$COD
+# We do not want to reclassify them for China like we do for HMM countries
 v_dont_reclass <- v_cod_reported[!(v_cod_reported %in% key_cod$cod_reclass)]
-v_dont_reclass # "CollectVio" "NatDis"   "Measles"  "TB"  "HIV"
+v_dont_reclass # "CollectVio" "NatDis" "Measles" "TB" "HIV"
 
 # Remove HIV from this vector
-# We don't want to reclassify CollectVio, NatDis, Measles, TB
-# We do want to reclassify HIV, because it will be squeezed in for China.
+# We do want to reclassify HIV for China, because it will be squeezed in.
 v_dont_reclass <- v_dont_reclass[!(v_dont_reclass %in% "HIV")]
 v_dont_reclass <- v_dont_reclass[order(v_dont_reclass)]
 

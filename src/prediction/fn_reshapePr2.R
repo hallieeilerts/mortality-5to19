@@ -4,12 +4,8 @@ fn_reshapePr2 <- function(DAT, UNCERTAINTY = FALSE){
   # 
   #' @description Reshapes output wide and only keeps median prediction. This needs to be updated for estimating uncertainty
   #
-  #' @param DAT Output from fn_pci2
+  #' @param DAT Output from fn_pr2
   #' @return Data frame with predicted CSMFs for each country and year
-  
-  # # testing
-  # DAT <- mod_pred_HMM
-  # UNCERTAINTY <- TRUE
   
   # Point estimate predictions (median of coefficients)
   if(!UNCERTAINTY){

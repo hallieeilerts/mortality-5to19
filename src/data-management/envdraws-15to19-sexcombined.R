@@ -1,5 +1,5 @@
 ################################################################################
-#' @description Create 15-19 sex combined (haven't run yet)
+#' @description Create 15-19 sex combined draws
 #' @return Data frame with c("iso3", "Year", "Sex")
 ################################################################################
 #' Initialize environment
@@ -11,8 +11,8 @@ library(purrr)
 #' Functions
 source("./src/prepare-session/set-inputs.R")
 #' Inputs
-envDraws_15to19yF  <- readRDS(paste("./gen/data-management/output/envDrawsList_15to19yF.rds", sep=""))
-envDraws_15to19yM  <- readRDS(paste("./gen/data-management/output/envDrawsList_15to19yM.rds", sep=""))
+envDraws_15to19yF  <- readRDS(paste("./gen/data-management/output/envDraws_15to19yF.rds", sep=""))
+envDraws_15to19yM  <- readRDS(paste("./gen/data-management/output/envDraws_15to19yM.rds", sep=""))
 ################################################################################
 
 deaths2 <- map2(envDraws_15to19yF$deaths2, envDraws_15to19yM$deaths2, ~
@@ -39,5 +39,5 @@ envDraws_15to19y <- list(deaths2 = l_deaths2,
 
 # Save output(s) ----------------------------------------------------------
 
-saveRDS(envDraws_15to19y, file = paste0("./gen/data-management/output/envDrawsList_15to19y.rds"))
+saveRDS(envDraws_15to19y, file = paste0("./gen/data-management/output/envDraws_15to19y.rds"))
 

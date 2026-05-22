@@ -1,8 +1,4 @@
 
-# Code to run a Stan model in parallel and save the results on disc
-#require(tidyverse)
-#require(rstan)
-
   # run model
   print(paste("Doing model:", st.input$name))
   ptm0 = proc.time()
@@ -28,7 +24,6 @@
   
   ptm1 = proc.time()
   print(paste("Time taken (min):",(ptm1-ptm0)/60))
-  #assign(st.name, list(stanfit=stanfit, st.data=st.data))
   assign(st.input$name, list(st.output=st.output, st.data=st.data, st.input=st.input))
   save(list=c(paste(st.input$name)), file=paste0(st.input$patho,"/", st.input$name,".RData"))
 

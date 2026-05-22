@@ -20,7 +20,7 @@ dat <- subset(singlecauses, AgeSexSuffix == ageSexSuffix)
 dat <- subset(dat, year %in% Years)
 
 # Tidy up
-dat <- dat[,c("iso3", "year", "HIV")]
+dat <- dat[,c("iso3", "year", "HIV", "hiv_lb", "hiv_ub")]
 dat <- dat[order(dat$iso3, dat$year), ]
 rownames(dat) <- NULL
 

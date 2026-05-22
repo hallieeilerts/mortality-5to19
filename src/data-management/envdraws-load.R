@@ -1,6 +1,6 @@
 ################################################################################
 #' @description Load draws and save for years of interest
-#' @return 
+#' @return Draws for 2000-2024
 ################################################################################
 #' Initialize environment
 rm(list = ls())
@@ -89,5 +89,3 @@ for(i in 1:length(v_folders)){
   saveRDS(envDraws, file = paste("./gen/data-management/temp/envDraws_", myAgeSexSuffix, ".rds",sep=""))
 
 }
-
-

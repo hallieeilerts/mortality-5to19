@@ -9,8 +9,6 @@ rm(list = ls())
 source("./src/prepare-session/set-inputs.R")
 ################################################################################
 
-# See file 'Code/20201023_ReadTBdata.R'
-
 # Minimum fraction of LRI
 if(ageSexSuffix == "05to09y"){frac_lri <- 0.0269}
 if(ageSexSuffix == "10to14y"){frac_lri <- 0.0197}

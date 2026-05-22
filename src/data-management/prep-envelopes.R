@@ -1,6 +1,6 @@
 ################################################################################
 #' @description Prepare crisis-free and crisis-included envelopes
-#' @return One file with envelopes for all ages and one age-specific file
+#' @return One file with envelopes for all ages and one age-specific envelope file
 ################################################################################
 #' Clear environment
 rm(list = ls())

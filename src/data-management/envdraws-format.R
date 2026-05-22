@@ -1,6 +1,6 @@
 ################################################################################
-#' @description Load draws and save for years of interest
-#' @return 
+#' @description Load draws and reformat
+#' @return Reformatted draws
 ################################################################################
 #' Initialize environment
 rm(list = ls())
