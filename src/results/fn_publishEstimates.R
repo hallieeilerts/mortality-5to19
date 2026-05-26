@@ -1,4 +1,4 @@
-fn_publishEstimates <- function(DAT, KEY_CODLIST = NULL, KEY_REGION, KEY_CTRYCLASS, KEY_AGESEXGRP = NULL, UNCERTAINTY = FALSE, REGIONAL = FALSE, AGGAGE = FALSE, CODALL = NULL, AGEGROUP = NULL, SEX = NULL){
+fn_publishEstimates <- function(DAT, KEY_CODLIST = NULL, KEY_REGION, KEY_CTRYCLASS, KEY_AGESEXGRP = NULL, UNCERTAINTY = FALSE, REGIONAL = FALSE, AGGAGE = FALSE, CODALL = NULL, AGEGROUP = NULL){
   
   #' @title Create final spreadsheet for results sharing for national estimates
   # 
@@ -7,19 +7,13 @@ fn_publishEstimates <- function(DAT, KEY_CODLIST = NULL, KEY_REGION, KEY_CTRYCLA
   #' @param DAT Data frame with CSMFs that have been processed in squeezing pipeline or point estimates, lower, and upper bounds for fractions/deaths/rates that have been processed in uncertainty pipeline
   #' @param KEY_REGION Data frame with countries and different regional classifications.
   #' @param KEY_CTRYCLASS Data frame which labels countries as HMM, LMM, or VR.
-  #' @param CODALL Vector with CODs for all age groups in correct order.
+  #' @param KEY_CODLIST Data frame with age-specific CODs
+  #' @param AGGAGE Boolean to denote whether aggregate age group (ie, spans more than 5 years)
+  #' @param AGEGROUP Name of age group if aggregate
+  #' @param CODALL Vector with all causes of death for all age groups
   #' @param UNCERTAINTY Boolean to denote whether to format uncertainty estimates.
   #' @return Data frame with all identifying columns and CSMFs or fractions/deaths/and rates for each COD in correct order.
-  
-  # # testing
-  # DAT <- csmfSqz_FRMT
-  # KEY_REGION <- key_region_u20
-  # KEY_CTRYCLASS <- key_ctryclass_u20
-  # KEY_AGESEXGRP <- key_agesexgrp
-  # #CODALL <- codAll
-  # KEY_CODLIST <- key_codlist
-  # REGIONAL <- FALSE
-  # UNCERTAINTY <- FALSE
+
   
   dat <- DAT
   
