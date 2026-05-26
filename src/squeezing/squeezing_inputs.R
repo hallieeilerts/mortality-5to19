@@ -6,6 +6,21 @@
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
 
+# Functions
+source("./src/squeezing/fn_mergeEnv.R")
+source("./src/squeezing/fn_prepareSqz.R")
+source("./src/squeezing/fn_prepareSqzChina.R")
+source("./src/squeezing/fn_sqzOtherCMPN.R")
+source("./src/squeezing/fn_sqzOtherCMPNchina.R")
+source("./src/squeezing/fn_sqzLRI.R")
+source("./src/squeezing/fn_sqzCrisisEnd.R")
+source("./src/squeezing/fn_sqzCrisisEpi.R")
+source("./src/squeezing/fn_addMeasEpi.R")
+source("./src/squeezing/fn_formatSqzOutput.R")
+source("./src/squeezing/fn_checkCSMFsqz.R")
+source("./src/squeezing/fn_formatAllOutput.R")
+source("./src/squeezing/fn_calcRegion.R")
+
 # Classification keys
 key_region <- read.csv("./gen/data-management/output/key_region_u20.csv")
 key_codlist <- read.csv(paste("./gen/data-management/output/key_codlist_", ageSexSuffix, ".csv", sep=""))

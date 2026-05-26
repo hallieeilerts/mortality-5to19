@@ -7,32 +7,20 @@ fn_sqzCrisisEpi <- function(CSMF, KEY_CODLIST){
   #' @param CSMF Data frame with CSMFs that has been prepared for squeezing.
   #' @param KEY_COD Data frame with age-specific CODs with different levels of classification.
   #' @return Data frame where deaths have been adjusted for epidemic crisis squeezing.
-  
-  # # testing
-  # CSMF <- csmf_crisisEndSQZ
-  # # CSMF <- csmf_othercmpnSQZ_CHN
-  # KEY_CODLIST <- key_codlist
-  # CSMF <- csmfDraws_crisisEndSQZ[[1]]
-  # KEY_CODLIST <- key_codlist
 
   dat <- CSMF
   
   # Vector with all causes of death (including single-cause estimates)
   v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
-  #v_cod <- unique(subset(KEY_CODLIST, !is.na(cod_reported))$cod_reported)   
   
   # Transform fractions into deaths 
-  # rowSums(dat[, paste(v_cod)]) # (fractions should add up to 1)
   dat[, paste(v_cod)] <- dat[, paste(v_cod)] * dat$Deaths1
   
   # Identify country/years where there are epidemic deaths
-  #v_idEpi <- which(dat$epi_colvio + dat$epi_natdis != 0)
   v_idEpi <- which(dat$epi_colvio + dat$epi_natdis + dat$epi_othercd + dat$epi_diar + dat$epi_othercd_prorata != 0)
   
   # Calculate proportion of epidemic deaths in each category
   if(length(v_idEpi) > 0){
-    #dat[v_idEpi, c("epi_colvio", "epi_natdis")] <- dat[v_idEpi, c("epi_colvio", "epi_natdis")]/(dat$epi_colvio[v_idEpi] + dat$epi_natdis[v_idEpi])
-    #dat[v_idEpi, c("epi_colvio", "epi_natdis", "epi_othercd")] <- dat[v_idEpi, c("epi_colvio", "epi_natdis", "epi_othercd")]/(dat$epi_colvio[v_idEpi] + dat$epi_natdis[v_idEpi] + dat$epi_othercd[v_idEpi])  
     dat[v_idEpi, c("epi_colvio", "epi_natdis", "epi_othercd", "epi_diar", "epi_othercd_prorata")] <- 
       dat[v_idEpi, c("epi_colvio", "epi_natdis", "epi_othercd", "epi_diar", "epi_othercd_prorata")]/
       (dat$epi_colvio[v_idEpi] + dat$epi_natdis[v_idEpi] + dat$epi_othercd[v_idEpi] + dat$epi_diar[v_idEpi] + dat$epi_othercd_prorata[v_idEpi])  

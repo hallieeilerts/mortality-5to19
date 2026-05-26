@@ -12,17 +12,6 @@ fn_calcRegion <- function(CSMF, ENV_REGION = NULL, KEY_REGION, KEY_CODLIST = NUL
   #' @param CODALL Vector of all CODs for 5-19, for use in calculations of aggregate age groups
   #' @return Data frame with regional CSMFs, all-cause crisis-included deaths and rates.
   
-  # # testing
-  # CSMF <- csmfSqz
-  # ENV_REGION <- env_REG
-  # KEY_REGION <- key_region
-  # KEY_CODLIST <- key_codlist
-  # fn_calcRegion(CSMF = csmfSqz_05to19, ENV_REGION = NULL, KEY_REGION = key_region_u20, AGGAGE = TRUE, CODALL = codAll)
-  # CSMF <- csmfSqz_05to19
-  # ENV_REGION = NULL
-  # KEY_REGION = key_region_u20
-  # CODALL = codAll
-  
   # Merge regions onto national estimates
   dat <- merge(CSMF, KEY_REGION, by = "iso3")
   

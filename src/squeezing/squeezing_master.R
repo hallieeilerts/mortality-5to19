@@ -7,7 +7,6 @@ rm(list = ls())
 
 # Load inputs and functions
 source("./src/squeezing/squeezing_inputs.R")
-source("./src/squeezing/squeezing_functions.R")
 
 # Merge on envelopes
 csmf_envADD        <- fn_mergeEnv(csmf, env)
@@ -33,11 +32,11 @@ if(ageSexSuffix == "05to09y"){
 if(ageSexSuffix == "10to14y"){
   csmf_othercmpnSQZ     <- fn_sqzOtherCMPN(csmf_singlecauseADD)
   csmf_lriSQZ           <- fn_sqzLRI(csmf_othercmpnSQZ)
-  csmf_crisisEndSQZ     <- fn_sqzCrisisEnd(csmf_lriSQZ, key_codlist) # fn_sqzCrisisEnd_old(csmf_lriSQZ, key_codlist)
-  dth_crisisEpiSQZ      <- fn_sqzCrisisEpi(csmf_crisisEndSQZ, key_codlist) # fn_sqzCrisisEpi_old(csmf_crisisEndSQZ, key_codlist)
+  csmf_crisisEndSQZ     <- fn_sqzCrisisEnd(csmf_lriSQZ, key_codlist)
+  dth_crisisEpiSQZ      <- fn_sqzCrisisEpi(csmf_crisisEndSQZ, key_codlist)
   dth_SQZ <- dth_crisisEpiSQZ
   csmf_othercmpnSQZ_CHN <- fn_sqzOtherCMPNchina(csmf_singlecauseADD_CHN)
-  dth_crisisEpiSQZ_CHN  <- fn_sqzCrisisEpi(csmf_othercmpnSQZ_CHN, key_codlist) # fn_sqzCrisisEpi_old(csmf_othercmpnSQZ_CHN, key_codlist)
+  dth_crisisEpiSQZ_CHN  <- fn_sqzCrisisEpi(csmf_othercmpnSQZ_CHN, key_codlist)
   dth_SQZ_CHN <- dth_crisisEpiSQZ_CHN
 }
 if(ageSexSuffix %in% c("15to19yF", "15to19yM")){

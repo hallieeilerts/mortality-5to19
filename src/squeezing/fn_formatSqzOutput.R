@@ -1,10 +1,3 @@
-
-# DTH <- dthDraws_SQZ[[1179]]
-# DTH_CHN <- dthDraws_SQZ_CHN[[1179]]
-# CSMF_NOTSQZ <- csmfDraws_envADD[[1179]]
-# CSMF_NOTSQZ_CHN <- csmfDraws_CHN[[1179]]
-# KEY_COD <- key_cod
-
 fn_formatSqzOutput <- function(DTH, DTH_CHN = NULL, CSMF_NOTSQZ, CSMF_NOTSQZ_CHN = NULL, KEY_CODLIST){
   
   #' @title Format squeezed output
@@ -17,13 +10,6 @@ fn_formatSqzOutput <- function(DTH, DTH_CHN = NULL, CSMF_NOTSQZ, CSMF_NOTSQZ_CHN
   #' @param CSMF_NOTSQZ_CHN Data frame with calculated CSMFs for China, prior to squeezing.
   #' @param KEY_COD Data frame with age-specific CODs with different levels of classification.
   #' @return Data frame with CSMFs that have been processed by squeezing functions, all-cause crisis-free and crisis-included deaths and rates.
-  
-  # # testing
-  # DTH <- dth_SQZ
-  # DTH_CHN <- dth_SQZ_CHN
-  # CSMF_NOTSQZ <- csmf_envADD
-  # CSMF_NOTSQZ_CHN <- csmf_envADD_CHN
-  # KEY_CODLIST <- key_codlist
   
   dat <- DTH
   csmf_notsqz <- CSMF_NOTSQZ
@@ -42,7 +28,6 @@ fn_formatSqzOutput <- function(DTH, DTH_CHN = NULL, CSMF_NOTSQZ, CSMF_NOTSQZ_CHN
   
   # Vector with all causes of death (including single-cause estimates)
   v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
-  #v_cod <- unique(subset(KEY_CODLIST, !is.na(cod_reported))$cod_reported)   
   
   # Back-transform deaths into fractions
   dat[, paste(v_cod)] <- dat[, paste(v_cod)]/dat$Deaths2

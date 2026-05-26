@@ -10,18 +10,10 @@ fn_prepareSqzChina <- function(CSMF, DAT_HIV, DAT_CRISIS, FRAC_CD){
   #' @param FRAC_CD Integer with minimum fraction of communicable disease.
   #' @return Data frame with calculated CSMFs, single cause data, envelopes, and minimum fractions.
   
-  # # testing
-  # CSMF <- csmf_envADD_CHN
-  # DAT_HIV <- dat_hiv
-  # DAT_CRISIS <- dat_crisis
-  # FRAC_CD <- frac_cd
-  
   # Merge on HIV
   dat <- merge(CSMF, DAT_HIV, by = c("iso3", "year"), all.x = T)
   
   # Merge on epidemic crisis
-  # dat <- merge(dat, DAT_CRISIS[, names(DAT_CRISIS)[!names(DAT_CRISIS) %in% c("CollectVio", "NatDis")]], 
-  #              by = idVars, all.x = T)
   dat <- merge(dat, DAT_CRISIS[, names(DAT_CRISIS)[!names(DAT_CRISIS) %in% c("end_colvio", "end_natdis", "end_othercd", "end_diar", "end_othercd_prorata")]], 
                by = c("iso3", "year"), all.x = T)
   

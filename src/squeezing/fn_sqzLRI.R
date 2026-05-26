@@ -36,9 +36,6 @@ fn_sqzLRI <- function(CSMF){
     dat$TB <- apply(dat[, c("TB", "TBre")], 1, sum)
   } 
   
-  # Remove unnecessary columns
-  #dat <- dat[,!(names(dat) %in% c("tb_lb", "tb_ub", "tbre_lb", "tbre_ub", "TBre", "LRIresid", "minLRI"))]
-  
   return(dat)
   
 }

@@ -5,7 +5,7 @@ fn_formatAllOutput <- function(CSMF_ALL, KEY_CODLIST){
   #' @description Combine data frames, rename crisis-included deaths and rates columns.
   #
   #' @param CSMF_ALL Data frame with CSMFs that have been processed by squeezing functions and CSMFs for GOODVR countries that have not been squeezed.
-  #' @param KEY_COD Data frame with age-specific CODs with different levels of classification.
+  #' @param KEY_CODLIST Data frame with age-specific CODs
   #' @return Data frame with CSMFs that have been processed by squeezing functions, CSMFs that were not squeezed (GOODVR), all-cause crisis-free and crisis-included deaths and rates.
   
   dat <- CSMF_ALL

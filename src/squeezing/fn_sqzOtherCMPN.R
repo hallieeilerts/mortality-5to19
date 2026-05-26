@@ -34,8 +34,6 @@ fn_sqzOtherCMPN <- function(CSMF){
     dat$TB[v_idSqz] <- dat$TB[v_idSqz] * v_scalingFactor
     dat$HIV[v_idSqz] <- dat$HIV[v_idSqz] * v_scalingFactor
     dat$OCDresid[v_idSqz] <- dat$minCD[v_idSqz] * v_scalingFactor
-    # range(dat$TB + dat$HIV + dat$Measles + dat$OCDresid - dat$OtherCMPN * dat$Deaths1)
-    # range(dat$TB[v_idSqz] + dat$HIV[v_idSqz] + dat$Measles[v_idSqz] + dat$OCDsq[v_idSqz] - (dat$OtherCMPN * dat$Deaths1)[v_idSqz])
   }
   
   # Convert to fractions
@@ -50,9 +48,6 @@ fn_sqzOtherCMPN <- function(CSMF){
   dat$HIV[is.na(dat$HIV)] <- 0
   dat$OtherCMPN <- dat$OCDresid/dat$Deaths1
   dat$OtherCMPN[is.na(dat$OtherCMPN)] <- 0
-  
-  # Remove unnecessary columns
-  #dat <- dat[,!(names(dat) %in% c("minCD", "OCDresid"))]
   
   return(dat)
   
