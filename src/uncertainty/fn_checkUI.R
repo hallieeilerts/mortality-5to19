@@ -1,26 +1,24 @@
-fn_checkUI <- function(POINTINT, CODALL, REGIONAL = FALSE, QUANTILE = "point"){
+fn_checkUI <- function(POINTINT, KEY_CODLIST, REGIONAL = FALSE, QUANTILE = "point"){
   
   #' @title Check if point estimates fall inside uncertainty intervals
   # 
   #' @description Checks for country-years where point estimate for deaths, fractions, or rates are outside of uncertainty intervals.
   #
   #' @param POINTINT Data frame with rounded point estimates, lower, and upper bounds for fractions/deaths/rates
-  #' @param CODALL Vector with CODs for all age groups in correct order.
+  #' @param KEY_CODLIST Data frame with age-specific CODs
   #' @param QUANTILE String of either "point" or "median" to determine which should be checked
   #' @return Data frame with rows where death/fraction/rate point estimates are outside of uncertainty intervals.
   
   dat <- POINTINT
   
-  # Causes of death for this age group
-  v_cod <- CODALL[CODALL %in% names(dat)]
-  #v_cod <- unique(KEY_COD$Reclass)  # Vector with ALL CAUSES OF DEATH (including single-cause estimates)
-  #v_cod <- v_cod[!v_cod %in% c("Other", "Undetermined")]
+  # Vector with all causes of death (including single-cause estimates)
+  v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
   
-  # Aux idVars
+  # ID variables
   if(!REGIONAL){
-    idVarsAux <- idVars
+    idVars <- c("iso3", "year")
   }else{
-    idVarsAux <- c("Region", idVars[2:3])
+    idVars <- c("Region", "year")
   }
   
   # Reshape to long
@@ -28,9 +26,9 @@ fn_checkUI <- function(POINTINT, CODALL, REGIONAL = FALSE, QUANTILE = "point"){
   
   # Reshape Variable and Quantile wide
   if(!REGIONAL){
-    datWide <- dcast(datLong,  ISO3+Year+Sex+cod ~ Variable+Quantile, value.var = "value")
+    datWide <- dcast(datLong,  iso3+year+cod ~ Variable+Quantile, value.var = "value")
   }else{
-    datWide <- dcast(datLong,  Region+Year+Sex+cod ~ Variable+Quantile, value.var = "value")
+    datWide <- dcast(datLong,  Region+Year+cod ~ Variable+Quantile, value.var = "value")
   }
   
   if(QUANTILE == "point"){
@@ -47,7 +45,7 @@ fn_checkUI <- function(POINTINT, CODALL, REGIONAL = FALSE, QUANTILE = "point"){
   }
   
   # Reshape to long
-  datLong2 <- melt(datWide, id.vars = c(idVarsAux, "cod", "Deaths_Check", "Fraction_Check", "Rate_Check"))
+  datLong2 <- melt(datWide, id.vars = c(idVars, "cod", "Deaths_Check", "Fraction_Check", "Rate_Check"))
   
   # Keep rows where point estimate is outside of bounds
   df_prob <- subset(datLong2, Deaths_Check == 1 | Fraction_Check == 1 | Rate_Check == 1)
@@ -57,11 +55,11 @@ fn_checkUI <- function(POINTINT, CODALL, REGIONAL = FALSE, QUANTILE = "point"){
   df_prob$flag[df_prob$Deaths_Check == 1 & df_prob$Variable == "Deaths"] <- 1
   df_prob$flag[df_prob$Fraction_Check == 1 & df_prob$Variable == "Fraction"] <- 1
   df_prob$flag[df_prob$Rate_Check == 1 & df_prob$Variable == "Rate"] <- 1
-  df_prob <- data.frame(df_prob)[,c(idVarsAux, "cod", "Variable", "Quantile", "value", "flag")]
+  df_prob <- data.frame(df_prob)[,c(idVars, "cod", "Variable", "Quantile", "value", "flag")]
   if(!REGIONAL){
-    df_prob <- df_prob[order(df_prob$ISO3, df_prob$Year, df_prob$cod, df_prob$Variable, df_prob$Quantile),]
+    df_prob <- df_prob[order(df_prob$iso3, df_prob$year, df_prob$cod, df_prob$Variable, df_prob$Quantile),]
   }else{
-    df_prob <- df_prob[order(df_prob$Region, df_prob$Year, df_prob$cod, df_prob$Variable, df_prob$Quantile),]
+    df_prob <- df_prob[order(df_prob$Region, df_prob$year, df_prob$cod, df_prob$Variable, df_prob$Quantile),]
   }
   
   if(nrow(df_prob) >= 1){

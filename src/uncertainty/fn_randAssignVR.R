@@ -8,7 +8,7 @@ fn_randAssignVR <- function(CSMF, KEY_CODLIST, CTRYGRP){
   #' @description Sample from multinomial distribution to perturb CSMFs for goodVR/China for current draw.
   #' 
   #' @param CSMF Data frame with CSMFs for goodvr/China.
-  #' @param KEY_COD Data frame with age-specific CODs with different levels of classification.
+  #' @param KEY_CODLIST Data frame with age-specific CODs
   #' @param CTRYGRP Character string that must be set as either 'GOODVR' or 'CHN'.
   #' @return Data frame with randomly sampled CSMFs.
   
@@ -16,20 +16,8 @@ fn_randAssignVR <- function(CSMF, KEY_CODLIST, CTRYGRP){
     stop("Must set CTRYGRP as either GOODVR or CHN")
   }
   
-  # # testing
-  # CSMF <- csmfList_envADD_GOODVR[[1]]
-  # KEY_COD <- key_cod
-  # CTRYGRP <- "GOODVR"
-  # CSMF <- csmfList_envADD_CHN[[1]]
-  # KEY_COD <- key_cod
-  # CTRYGRP <- "CHN"
-  
   dat <- CSMF
   
-  # Vector with all causes of death (including single-cause estimates)
-  # v_cod <- unique(KEY_COD$cod_reclass)  
-  # v_cod <- v_cod[!v_cod %in% c("Other", "Undetermined")]
-  # v_cod <- v_cod[!is.na(v_cod)]
   # Vector with all causes of death (including single-cause estimates)
   v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
   

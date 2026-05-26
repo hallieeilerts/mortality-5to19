@@ -1,4 +1,4 @@
-fn_roundPointInt <- function(POINTINT, CODALL, REGIONAL = FALSE){
+fn_roundPointInt <- function(POINTINT, KEY_CODLIST, REGIONAL = FALSE){
   
   #' @title Round point estimates, lower, and upper bounds for fractions/deaths/and rates
   # 
@@ -6,14 +6,14 @@ fn_roundPointInt <- function(POINTINT, CODALL, REGIONAL = FALSE){
   #' When cause-specific deaths point estimate is between 0 and 1, change LB of fractions/rates/deaths to 0.
   #
   #' @param POINTINT Data frame with point estimates, lower, and upper bounds for fractions/deaths/and rates
-  #' @param CODALL Vector with CODs for all age groups in correct order.
+  #' @param KEY_CODLIST Data frame with age-specific CODs
   #' @param REGIONAL Boolean with true/false value if regional estimates.
   #' @return Data frame with rounded point estimates, lower, and upper bounds for fractions/deaths/and rates
   
   dat <- data.frame(POINTINT)
-  
-  # Causes of death for this age group
-  v_cod <- CODALL[CODALL %in% names(dat)]
+
+  # Vector with all causes of death (including single-cause estimates)
+  v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
   
   ## Deaths
   
@@ -74,9 +74,9 @@ fn_roundPointInt <- function(POINTINT, CODALL, REGIONAL = FALSE){
   
   # Tidy
   if(!REGIONAL){
-    dat <- dat[order(dat$ISO3, dat$Year, dat$Sex, dat$Variable, dat$Quantile),]
+    dat <- dat[order(dat$iso3, dat$year, dat$Variable, dat$Quantile),]
   }else{
-    dat <- dat[order(dat$Region, dat$Year, dat$Sex, dat$Variable, dat$Quantile),]
+    dat <- dat[order(dat$Region, dat$year, dat$Variable, dat$Quantile),]
   }
   rownames(dat) <- NULL
   

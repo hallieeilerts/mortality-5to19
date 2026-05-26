@@ -2,11 +2,17 @@
 # Uncertainty
 ################################################
 
+# Clear environment
+rm(list = ls())
+
 # Load inputs and functions
 source("./src/uncertainty/uncertainty_inputs.R")
-source("./src/uncertainty/uncertainty_functions.R")
-source("./src/prediction/prediction_functions.R")
-source("./src/squeezing/squeezing_functions.R")
+source("./src/prediction/prediction_inputs.R")
+source("./src/squeezing/squeezing_inputs.R")
+
+# Remove unnecessary inputs from prediction
+rm(dat_hp, dat_pred, key_ctryclass, cases_malaria_05to19, frac_malaria_01to04)
+detach("package:MASS")
 
 # Prepare draws -----------------------------------------------------------
 
@@ -39,8 +45,8 @@ if(ageSexSuffix == "05to09y"){
   csmfDraws_singlecauseADD <- lapply(csmfDraws_singlecauseADD, function(x){ fn_randAssignMeas(x) })
 }
 csmfDraws_singlecauseADD <- lapply(csmfDraws_singlecauseADD, function(x){ fn_randAssignTB(x) })
-#csmfDraws_singlecauseADD <- lapply(csmfDraws_singlecauseADD, function(x){ fn_randAssignHIV(x) }) # !! need unc bounds
-#csmfDraws_singlecauseADD_CHN <- lapply(csmfDraws_singlecauseADD_CHN, function(x){ fn_randAssignHIV(x) }) # !! need unc bounds
+csmfDraws_singlecauseADD <- lapply(csmfDraws_singlecauseADD, function(x){ fn_randAssignHIV(x) })
+csmfDraws_singlecauseADD_CHN <- lapply(csmfDraws_singlecauseADD_CHN, function(x){ fn_randAssignHIV(x) })
 
 # Squeezing ---------------------------------------------------------------
 
@@ -96,51 +102,44 @@ if(nrow(df_csmfDraws_SQZ_AUD) > 0){
 # Combine squeezed output from modeled countries and China with GOODVR, format, save
 csmfDraws_All <- mapply(rbind, csmfDraws_SQZ, csmfDraws_GOODVR, SIMPLIFY = FALSE)
 csmfDraws_All <- lapply(csmfDraws_All, function(x){ fn_formatAllOutput(x, key_codlist) })
+## saveRDS(csmfDraws_All, paste0("./gen/uncertainty/output/csmfSqzDraws_", ageSexSuffix, ".rds"))
 
-# Save --------------------------------------------------------------------
+# Calculate regional CSMFs
+csmfSqzDraws_REG <- lapply(csmfDraws_SQZ, function(x){ fn_calcRegion(x,  ENV_REGION = env_REG, KEY_REGION = key_region, KEY_CODLIST = key_codlist) })
 
-saveRDS(csmfDraws_All, paste0("./gen/uncertainty/output/csmfSqzDraws_", ageSexSuffix, ".rds"))
+# Remove unnecessary objects
+rm(dthDraws_SQZ, dthDraws_SQZ_CHN, csmfDraws_envADD)
 
+# Uncertainty -------------------------------------------------------------
 
+# Calculate uncertainty intervals
+ui <- fn_calcUI(csmfDraws_All, UI = 0.95, key_codlist)
+ui_REG <- fn_calcUI(csmfSqzDraws_REG, UI = 0.95, key_codlist, REGIONAL = TRUE)
 
+# Combine point estimates with uncertainty intervals
+pointInt <- fn_combineUIpoint(ui, csmfPoint, key_codlist)
+pointInt_REG <- fn_combineUIpoint(ui_REG, csmfPoint_REG, key_codlist, REGIONAL = TRUE)
 
-# # Calculate regional CSMFs
-# csmfSqzDraws_REG <- lapply(csmfSqzDraws, function(x){ fn_calcRegion(x,  env_REG, codAll, key_region) })
-# 
-# # Remove unnecessary objects
-# rm(dthDraws_SQZ, dthDraws_SQZ_CHN, csmfDraws_envADD)
-# 
-# ## Uncertainty
-# 
-# # Calculate uncertainty intervals
-# ui <- fn_calcUI(csmfSqzDraws, UI = 0.95, CODALL = codAll, ENV = env)
-# ui_REG <- fn_calcUI(csmfSqzDraws_REG, UI = 0.95, CODALL = codAll, REGIONAL = TRUE)
-# 
-# # Combine point estimates with uncertainty intervals
-# pointInt <- fn_combineUIpoint(ui, csmfSqz, codAll)
-# pointInt_REG <- fn_combineUIpoint(ui_REG, csmfSqz_REG, codAll, REGIONAL = TRUE)
-# 
-# # Round point estimates with uncertainty intervals
-# pointInt_FRMT <- fn_roundPointInt(pointInt, codAll)
-# pointInt_FRMT_REG <- fn_roundPointInt(pointInt_REG, codAll, REGIONAL = TRUE)
-# 
-# # Audit: check if point estimates fall in uncertainty bounds
-# pointInt_AUD <- fn_checkUI(pointInt_FRMT, codAll)
-# pointInt_AUD_REG <- fn_checkUI(pointInt_FRMT_REG, codAll, REGIONAL = TRUE)
-# if(nrow(pointInt_AUD) > 0){write.csv(pointInt_AUD, paste("./gen/uncertainty/audit/pointInt_AUD_", ageGroup,"_", resDate, ".csv", sep=""), row.names = FALSE)}
-# if(nrow(pointInt_AUD_REG) > 0){write.csv(pointInt_AUD_REG, paste("./gen/uncertainty/audit/pointInt_AUD_", ageGroup,"REG_", resDate, ".csv", sep=""), row.names = FALSE)}
-# 
-# # Adjust point estimates and uncertainty intervals
-# pointInt_ADJ <- fn_adjustPointIntZeroDeaths(pointInt_FRMT, codAll)
-# pointInt_ADJ <- fn_manuallyAdjustBounds(pointInt_ADJ)
-# 
-# # Audit: check if point estimates fall in uncertainty bounds
-# pointIntAdj_AUD <- fn_checkUI(pointInt_ADJ, codAll)
-# if(nrow(pointIntAdj_AUD) > 0){
-#   write.csv(pointIntAdj_AUD, paste("./gen/uncertainty/audit/pointIntAdj_AUD_", ageGroup,"_", resDate, ".csv", sep=""), row.names = FALSE)
-# }
-# 
-# # Save
-# write.csv(pointInt_ADJ, paste("./gen/uncertainty/output/pointInt_", ageGroup,".csv", sep=""), row.names = FALSE)
-# write.csv(pointInt_FRMT_REG, paste("./gen/uncertainty/output/pointInt_", ageGroup,"REG.csv", sep=""), row.names = FALSE)
+# Round point estimates with uncertainty intervals
+pointInt_FRMT <- fn_roundPointInt(pointInt, key_codlist)
+pointInt_FRMT_REG <- fn_roundPointInt(pointInt_REG, key_codlist, REGIONAL = TRUE)
+
+# Audit: check if point estimates fall in uncertainty bounds
+pointInt_AUD <- fn_checkUI(pointInt_FRMT, key_codlist)
+pointInt_AUD_REG <- fn_checkUI(pointInt_FRMT_REG, key_codlist, REGIONAL = TRUE)
+if(nrow(pointInt_AUD) > 0){write.csv(pointInt_AUD, paste("./gen/uncertainty/audit/pointInt_AUD_", ageGroup,"_", resDate, ".csv", sep=""), row.names = FALSE)}
+if(nrow(pointInt_AUD_REG) > 0){write.csv(pointInt_AUD_REG, paste("./gen/uncertainty/audit/pointInt_AUD_", ageGroup,"REG_", resDate, ".csv", sep=""), row.names = FALSE)}
+
+# Adjust point estimates and uncertainty intervals
+pointInt_ADJ <- fn_adjustPointIntZeroDeaths(pointInt_FRMT, key_codlist)
+
+# Audit: check if point estimates fall in uncertainty bounds
+pointIntAdj_AUD <- fn_checkUI(pointInt_ADJ, key_codlist)
+if(nrow(pointIntAdj_AUD) > 0){
+  write.csv(pointIntAdj_AUD, paste("./gen/uncertainty/audit/pointIntAdj_AUD_", ageGroup,"_", resDate, ".csv", sep=""), row.names = FALSE)
+}
+
+# Save
+write.csv(pointInt_ADJ, paste("./gen/uncertainty/output/pointInt_", ageGroup,".csv", sep=""), row.names = FALSE)
+write.csv(pointInt_FRMT_REG, paste("./gen/uncertainty/output/pointInt_", ageGroup,"REG.csv", sep=""), row.names = FALSE)
 

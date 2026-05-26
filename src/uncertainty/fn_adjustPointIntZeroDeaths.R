@@ -1,4 +1,4 @@
-fn_adjustPointIntZeroDeaths <- function(POINTINT, CODALL, REGIONAL = FALSE){
+fn_adjustPointIntZeroDeaths <- function(POINTINT, KEY_CODLIST, REGIONAL = FALSE){
   
   #' @title Adjust point estimates, lower, and upper bounds when cause-specific or all-cause deaths are close to zero
   # 
@@ -9,13 +9,20 @@ fn_adjustPointIntZeroDeaths <- function(POINTINT, CODALL, REGIONAL = FALSE){
   #' Adjust LB and UB of cause-specific fractions that fall on wrong side of point estimate.
   #
   #' @param POINTINT Data frame with rounded point estimates, lower, and upper bounds for fractions/deaths/rates
-  #' @param CODALL Vector with CODs for all age groups in correct order.
+  #' @param KEY_CODLIST Data frame with age-specific CODs
   #' @param REGIONAL Boolean with true/false value if regional estimates.
   #' @return Data frame with rounded point estimates, lower, and upper bounds for fractions/deaths/rates that have been adjusted for inconsistencies.
   
   dat <- POINTINT
-  v_cod <- CODALL[CODALL %in% names(dat)]
-  v_other <- names(dat)[!(names(dat) %in% v_cod)]
+  # Vector with all causes of death (including single-cause estimates)
+  v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
+  
+  # ID variables
+  if(!REGIONAL){
+    idVars <- c("iso3", "year")
+  }else{
+    idVars <- c("Region", "year")
+  }
   
   ## Adjustments to cause-specific fractions/rates/deaths due to cause-specific deaths between 0 and 1
   
@@ -24,9 +31,9 @@ fn_adjustPointIntZeroDeaths <- function(POINTINT, CODALL, REGIONAL = FALSE){
   datLong$cod <- as.character(datLong$cod)
   
   if(REGIONAL){
-    datLong$id <- paste0(datLong$Region, datLong$Year, datLong$Sex, datLong$cod)
+    datLong$id <- paste0(datLong$Region, datLong$year, datLong$cod)
   }else{
-    datLong$id <- paste0(datLong$ISO3, datLong$Year, datLong$Sex, datLong$cod)
+    datLong$id <- paste0(datLong$iso3, datLong$year, datLong$cod)
   }
   
   # When cause-specific deaths point estimate <= 1, change lower bound of fractions/rates/deaths to 0
@@ -36,11 +43,6 @@ fn_adjustPointIntZeroDeaths <- function(POINTINT, CODALL, REGIONAL = FALSE){
   # Reshape to wide to identify more values in need of adjustment
   # All adjustments will still be made to datLong
   datWide <- dcast(setDT(datLong),  id ~ Variable+Quantile, value.var = "value")
-  
-  # When cause-specific deaths point estimate is between 0 and 1 and also larger than the upper bound, change the upper bound to 1
-  # Note: this one commented out  in Pancho's function AdjustUncert()
-  #id_ubDeathsADJ <- unique(subset(datWide, Deaths_Point > 0 & Deaths_Point < 1 & Deaths_Point > Deaths_Upper)$id)
-  #datLong$value[datLong$id %in% id_ubDeathsADJ & datLong$Quantile == "Upper" & datLong$Variable == "Deaths"] <- 1
   
   # When cause-specific deaths point estimate = 0 and upper bound of cause-specific rate < cause-specific rate point estimate, change point estimate of rate to 0.
   id_pointRateADJ <- unique(subset(datWide, Deaths_Point == 0 & Rate_Upper < Rate_Point)$id)
@@ -106,11 +108,11 @@ fn_adjustPointIntZeroDeaths <- function(POINTINT, CODALL, REGIONAL = FALSE){
   df_res <- datLong
   df_res$id <- NULL
   df_res <- dcast(df_res, ... ~ cod, value.var = "value")
-  df_res <- data.frame(df_res)[, c(v_other, v_cod)]
+  df_res <- data.frame(df_res)[, c(idVars, "Deaths2", "Rate2", "Variable", "Quantile", v_cod)]
   if(!REGIONAL){
-    df_res <- df_res[order(df_res$ISO3, df_res$Year, df_res$Sex, df_res$Variable, df_res$Quantile),]
+    df_res <- df_res[order(df_res$iso3, df_res$year, df_res$Variable, df_res$Quantile),]
   }else{
-    df_res <- df_res[order(df_res$Region, df_res$Year, df_res$Sex, df_res$Variable, df_res$Quantile),]
+    df_res <- df_res[order(df_res$Region, df_res$year, df_res$Variable, df_res$Quantile),]
   }
   rownames(df_res) <- NULL
   

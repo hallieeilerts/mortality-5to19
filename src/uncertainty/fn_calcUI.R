@@ -1,4 +1,4 @@
-fn_calcUI <- function(L_CSMFDRAWS, UI, CODALL, ENV = NULL, REGIONAL = FALSE){
+fn_calcUI <- function(L_CSMFDRAWS, UI, KEY_CODLIST, ENV = NULL, REGIONAL = FALSE){
   
   #' @title Calculate uncertainty intervals for fractions/rates/deaths from draws
   # 
@@ -12,21 +12,20 @@ fn_calcUI <- function(L_CSMFDRAWS, UI, CODALL, ENV = NULL, REGIONAL = FALSE){
   #' Each list element is a data frame with CSMFs for every country-year for all CODs estimated.
   #' Also contains columns c("ISO3", "Year", "Sex", "Deaths", "Rate")
   #' @param UI Integer with the width of the uncertainty interval desired.
-  #' @param CODALL Vector with CODs for all age groups in correct order.
-  #' @param ENV
+  #' @param KEY_CODLIST Data frame with age-specific CODs
+  #' @param ENV placeholder until envelope draws are received
   #' @return Data frame with lower and upper quantiles for each COD for deaths, fractions, rates.
   
   # Create interval
   UI <- 1/2 + c(-UI, UI) / 2
   
-  # Causes of death for this age group
-  v_cod <- CODALL[CODALL %in% names(L_CSMFDRAWS[[1]])]
-  
+  # Vector with all causes of death (including single-cause estimates)
+  v_cod <- subset(KEY_CODLIST, ModeledOrReported == "Reported")$COD
+
   # One data frame with identifying columns that are shared across all draws
   df_idcols <- L_CSMFDRAWS[[1]][, !names(L_CSMFDRAWS[[1]]) %in% c("Deaths1", "Rate1", "Deaths2", "Rate2", paste(v_cod))]
   
   if(!is.null(ENV)){
-    # All-cause rate from IGME envelope (for use in 2023.06.14 PATCH below)
     df_env <- merge(df_idcols, ENV[,c(idVars, "Rate2")], all.x = TRUE)
   }
   
@@ -51,59 +50,6 @@ fn_calcUI <- function(L_CSMFDRAWS, UI, CODALL, ENV = NULL, REGIONAL = FALSE){
   m_rates_lb <- apply(simplify2array(l_rates), c(1,2), quantile, UI[1], na.rm = T)
   m_rates_ub <- apply(simplify2array(l_rates), c(1,2), quantile, UI[2], na.rm = T)
   m_rates_med <- apply(simplify2array(l_rates), c(1,2), quantile, .5, na.rm = T)
-  
-  if(!is.null(ENV)){
-    #------------------------#
-    # 2023.06.14 PATCH
-    # Adjust upper bound of all-cause mortality rate (and cause specific rates) if it is ever below IGME envelope point estimate.
-    # From Pancho's function CalcUncert(). 
-    # Check if the upper bound of the all-cause rate (column 2) is below IGME envelope.
-    # If so, shift cause-specific and all-cause rate upper bound upwards for that country-year in all draws.
-    # Recalculate quantiles for upper bounds.
-    # Check again.
-    idqx <- which(m_rates_ub[,2] < df_env$Rate2)
-    idqx_check <- idqx
-    if (length(idqx) > 0) {
-      l_rates_Aux         <- lapply(l_rates, function(x) as.matrix(x[idqx, c("Deaths2","Rate2", v_cod)])  * 1.05 )
-      m_rates_ub_Aux      <- apply(simplify2array(l_rates_Aux), c(1,2), quantile, .99, na.rm = T)
-      m_rates_ub[idqx, ]  <- m_rates_ub_Aux
-    }
-    idqx <- which(m_rates_ub[,2] < df_env$Rate2)
-    if (length(idqx) > 0) {
-      l_rates_Aux         <- lapply(l_rates, function(x) as.matrix(x[idqx, c("Deaths2","Rate2", v_cod)])  * 1.1 )
-      m_rates_ub_Aux      <- apply(simplify2array(l_rates_Aux), c(1,2), quantile, .99, na.rm = T)
-      m_rates_ub[idqx, ]  <- m_rates_ub_Aux
-    }
-    idqx <- which(m_rates_ub[,2] < df_env$Rate2)
-    if (length(idqx) > 0) {
-      l_rates_Aux         <- lapply(l_rates, function(x) as.matrix(x[idqx, c("Deaths2","Rate2", v_cod)])  * 1.5 )
-      m_rates_ub_Aux      <- apply(simplify2array(l_rates_Aux), c(1,2), quantile, .99, na.rm = T)
-      m_rates_ub[idqx, ]  <- m_rates_ub_Aux
-    }
-    idqx <- which(m_rates_ub[,2] < df_env$Rate2)
-    if (length(idqx) > 0) {
-      l_rates_Aux         <- lapply(l_rates, function(x) as.matrix(x[idqx, c("Deaths2","Rate2", v_cod)])  * 2 )
-      m_rates_ub_Aux      <- apply(simplify2array(l_rates_Aux), c(1,2), quantile, .99, na.rm = T)
-      m_rates_ub[idqx, ]  <- m_rates_ub_Aux
-    }
-    idqx <- which(m_rates_ub[,2] < df_env$Rate2)
-    if (length(idqx) > 0) {
-      l_rates_Aux         <- lapply(l_rates, function(x) as.matrix(x[idqx, c("Deaths2","Rate2", v_cod)])  * 3 )
-      m_rates_ub_Aux      <- apply(simplify2array(l_rates_Aux), c(1,2), quantile, .99, na.rm = T)
-      m_rates_ub[idqx, ]  <- m_rates_ub_Aux
-    }
-    idqx <- which(m_rates_ub[,2] < df_env$Rate2)
-    if (length(idqx) > 0) {
-      l_rates_Aux         <- lapply(l_rates, function(x) as.matrix(x[idqx, c("Deaths2","Rate2", v_cod)])  * 4.5 )
-      m_rates_ub_Aux      <- apply(simplify2array(l_rates_Aux), c(1,2), quantile, .999, na.rm = T)
-      m_rates_ub[idqx, ]  <- m_rates_ub_Aux
-    }
-    
-    # Hal note: Not sure why this is only done for rates. Is there a need to check if upper bound of all-cause Deaths2 in the draw is ever below the IGME envelope value for Deaths2? 
-    
-    # END PATCH
-    #------------------------#
-  }
   
   # Format arrays into data frames
   df_frac_lb <- as.data.frame(cbind(df_idcols, 
@@ -146,9 +92,9 @@ fn_calcUI <- function(L_CSMFDRAWS, UI, CODALL, ENV = NULL, REGIONAL = FALSE){
   # Combine and tidy
   df_res <- rbind(df_frac_lb, df_frac_med, df_frac_ub, df_deaths_lb, df_deaths_ub, df_deaths_med, df_rates_lb, df_rates_ub, df_rates_med)
   if(!REGIONAL){
-    df_res <- df_res[order(df_res$ISO3, df_res$Year, df_res$Sex, df_res$Variable, df_res$Quantile),]
+    df_res <- df_res[order(df_res$iso3, df_res$year, df_res$Variable, df_res$Quantile),]
   }else{
-    df_res <- df_res[order(df_res$Region, df_res$Year, df_res$Sex, df_res$Variable, df_res$Quantile),]
+    df_res <- df_res[order(df_res$region, df_res$year, df_res$Variable, df_res$Quantile),]
   }
   rownames(df_res) <- NULL
   
