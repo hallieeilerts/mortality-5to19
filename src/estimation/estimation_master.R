@@ -7,7 +7,6 @@ rm(list = ls())
 
 # Load functions
 source("./src/estimation/estimation_inputs.R")
-source("./src/estimation/estimation_functions.R")
 
 # Create model input (studies, deaths, vdt, vxf, nchai, niter, nburn)
 mod_input_HMM <- fn_createModInput(ageSexSuffix, "HMM", mod_dat_HMM, dat_covar, dat_cod, dat_hp)

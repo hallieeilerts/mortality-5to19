@@ -7,7 +7,6 @@ rm(list = ls())
 
 # Load inputs and functions
 source("./src/prediction/prediction_inputs.R")
-source("./src/prediction/prediction_functions.R")
 
 # Load HMM and LMM model fit
 mod_fit_HMM <- fn_loadModFit(ageSexSuffix, "HMM", dat_hp)

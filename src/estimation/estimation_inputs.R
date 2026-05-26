@@ -2,8 +2,7 @@
 #' @description Loads all libraries and inputs required for Estimation.
 #' @return Inputs loaded below
 ################################################################################
-# Clear environment
-rm(list = ls())
+
 #' Libraries
 library(tidyr)
 library(dplyr)
@@ -13,6 +12,10 @@ library(here)
 library(readxl)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
+
+# Functions
+source("./src/estimation/fn_createModInput.R")
+source("./src/estimation/fn_setRefCat.R")
 
 # Covariate names
 dat_filename <- list.files("./data/keys/")

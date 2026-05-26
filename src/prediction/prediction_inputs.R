@@ -2,8 +2,6 @@
 #' @description Loads all libraries and inputs required for Prediction.
 #' @return Inputs loaded below
 ################################################################################
-# Clear environment
-rm(list = ls())
 #' Libraries
 library(abind)
 library(rstan)
@@ -13,6 +11,15 @@ library(dplyr)
 library(MASS)
 #' Inputs
 source("./src/prepare-session/set-inputs.R")
+
+# Functions
+source("./src/prediction/fn_loadModFit.R")
+source("./src/prediction/fn_par.R")
+source("./src/prediction/fn_pr2.R")
+source("./src/prediction/fn_reshapePr2.R")
+source("./src/prediction/fn_capMalFrac.R")
+source("./src/prediction/fn_setMalFrac.R")
+source("./src/prediction/fn_formatPrediction.R")
 
 # Hyperparameters
 dat_filename <- list.files("./data/keys/")
